@@ -147,20 +147,12 @@ else:
     st.success("Option 3 provides the **highest total monthly income** after retirement.")
 
 # --- STACKED BAR CHART ---
-st.subheader("📊 Stacked Bar Graph Comparing All Three Pension & ISA Scenarios")
-
-options = ["Option 1", "Option 2", "Option 3"]
-pension_contributions = np.array([scenario_1["Pension Contribution"], scenario_2["Pension Contribution"], scenario_3["Pension Contribution"]])
-tax_paid = np.array([scenario_1["Tax Paid"], scenario_2["Tax Paid"], scenario_3["Tax Paid"]])
-ni_paid = np.array([scenario_1["NI Paid"], scenario_2["NI Paid"], scenario_3["NI Paid"]])
-isa_invested = np.array([scenario_1["ISA Contribution"], scenario_2["ISA Contribution"], scenario_3["ISA Contribution"]])
-pension_pot = np.array([scenario_1["Pension Pot at Retirement"], scenario_2["Pension Pot at Retirement"], scenario_3["Pension Pot at Retirement"]])
-isa_pot = np.array([scenario_1["ISA Pot at Retirement"], scenario_2["ISA Pot at Retirement"], scenario_3["ISA Pot at Retirement"]])
-monthly_income = np.array([scenario_1["Total Monthly Income Post-Tax"] * 12, scenario_2["Total Monthly Income Post-Tax"] * 12, scenario_3["Total Monthly Income Post-Tax"] * 12])
+# --- STACKED BAR CHART WITH FIXES ---
+st.subheader("📊 Improved Stacked Bar Graph Comparing All Three Pension & ISA Scenarios")
 
 # Smaller bars with reduced size
-bar_width = 0.5
-fig, ax = plt.subplots(figsize=(6, 4))  # Reduce figure size
+bar_width = 0.4
+fig, ax = plt.subplots(figsize=(10, 5))  # Adjust figure size for better spacing
 ax.bar(options, pension_contributions, width=bar_width, label="Pension Contribution")
 ax.bar(options, tax_paid, width=bar_width, bottom=pension_contributions, label="Tax Paid")
 ax.bar(options, ni_paid, width=bar_width, bottom=pension_contributions + tax_paid, label="NI Paid")
@@ -169,9 +161,11 @@ ax.bar(options, pension_pot, width=bar_width, bottom=pension_contributions + tax
 ax.bar(options, isa_pot, width=bar_width, bottom=pension_contributions + tax_paid + ni_paid + isa_invested + pension_pot, label="ISA Pot at Retirement")
 ax.bar(options, monthly_income, width=bar_width, bottom=pension_contributions + tax_paid + ni_paid + isa_invested + pension_pot + isa_pot, label="Total Monthly Income (Annualized)")
 
-# Adjust Y-axis and labels
+# Add labels, adjust legend, and apply log scale for visibility
 ax.set_ylabel("Value (£)")
-ax.set_title("Stacked Bar Graph Comparing Pension & ISA Scenarios")
-ax.legend(loc="upper left")
+ax.set_title("Improved Stacked Bar Graph Comparing Pension & ISA Scenarios")
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)  # Move legend below graph
 plt.tight_layout()
+
+# Display the updated graph
 st.pyplot(fig)

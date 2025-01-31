@@ -15,16 +15,15 @@ current_pension_pot = st.sidebar.number_input("Current Pension Pot (£)", min_va
 annual_pension_contrib = st.sidebar.number_input("Annual Pension Contribution (£)", min_value=0, value=3133, step=100)
 retirement_age = st.sidebar.number_input("Retirement Age", min_value=50, max_value=75, value=65, step=1)
 years = retirement_age - 40  
-isa_limit = 20000  
 
-# --- Scenario 1 Inputs ---
+# Scenario 1 Inputs
 st.sidebar.subheader("Scenario 1: Pension & ISA Strategy")
 one_off_pension_s1 = st.sidebar.number_input("One-Off Pension Contribution (S1) (£)", min_value=0, value=20000, step=500)
 one_off_isa_s1_y1 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 1) (£)", min_value=0, value=20000, step=500)
 one_off_isa_s1_y2 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 2) (£)", min_value=0, value=20000, step=500)
 annual_isa_s1 = st.sidebar.number_input("Annual ISA Contribution (S1, Years 3-25) (£)", min_value=0, value=5000, step=500)
 
-# --- Scenario 2 Inputs ---
+# Scenario 2 Inputs
 st.sidebar.subheader("Scenario 2: Alternative Pension & ISA Strategy")
 one_off_pension_s2 = st.sidebar.number_input("One-Off Pension Contribution (S2) (£)", min_value=0, value=35000, step=500)
 one_off_isa_s2_y1 = st.sidebar.number_input("ISA One-Off Contribution (S2, Year 1) (£)", min_value=0, value=15000, step=500)
@@ -35,75 +34,60 @@ annual_isa_s2 = st.sidebar.number_input("Annual ISA Contribution (S2, Years 3-25
 pension_growth = st.sidebar.number_input("Pension Growth Rate (%)", min_value=0.0, max_value=10.0, value=5.7, step=0.1) / 100
 isa_growth = st.sidebar.number_input("ISA Growth Rate (%)", min_value=0.0, max_value=10.0, value=7.0, step=0.1) / 100
 
-# --- TAX & NI CALCULATION ---
-def calculate_tax(income):
-    if income > 150000:
-        return income * 0.45
-    elif income > 50270:
-        return income * 0.40
-    else:
-        return income * 0.20
-
-def calculate_ni(income):
-    return income * 0.02 if income > 50270 else 0
-
-# --- SCENARIO CALCULATIONS ---
-def calculate_scenario(one_off_pension, one_off_isa_y1, one_off_isa_y2, annual_isa):
-    total_income = annual_income + one_off_income
-    
-    # Tax and NI before pension contribution
-    tax_before = calculate_tax(total_income)
-    ni_before = calculate_ni(total_income)
-    
-    # Tax and NI after pension contribution
-    taxable_income = total_income - one_off_pension
-    tax_after = calculate_tax(taxable_income)
-    ni_after = calculate_ni(taxable_income)
-    
-    # Tax & NI savings
-    tax_savings = tax_before - tax_after
-    ni_savings = ni_before - ni_after
-    total_tax_ni_savings = tax_savings + ni_savings
-
-    # Correct Available Cash Calculation
-    balance_after_tax = taxable_income - tax_after - ni_after
-
-    # ISA Contributions & Growth
-    isa_year_1 = min(balance_after_tax, one_off_isa_y1)
-    isa_year_2 = min(balance_after_tax - isa_year_1, one_off_isa_y2)
-    isa_annual_years_3_25 = np.array([annual_isa] * (years - 2))
-
-    isa_value = isa_year_1 * ((1 + isa_growth) ** years) + isa_year_2 * ((1 + isa_growth) ** (years - 1))
-    isa_value += sum([isa_annual_years_3_25[i] * ((1 + isa_growth) ** (years - (i + 3))) for i in range(len(isa_annual_years_3_25))])
-
-    pension_value = (current_pension_pot + one_off_pension) * ((1 + pension_growth) ** years)
-    pension_value += annual_pension_contrib * sum([(1 + pension_growth) ** (years - i) for i in range(1, years + 1)])
-
-    # Post-Retirement Income Calculation
-    annual_isa_income = isa_value * 0.04
-    annual_pension_income = (pension_value * 0.25 * 0.04) + (pension_value * 0.75 * 0.04 * 0.80)
-    annual_post_tax_income = annual_isa_income + annual_pension_income
-    monthly_post_tax_income = annual_post_tax_income / 12
-
-    return (pension_value, isa_value, annual_post_tax_income, monthly_post_tax_income, 
-            annual_pension_income, annual_isa_income, total_tax_ni_savings, balance_after_tax)
-
-# --- COMPUTE RESULTS ---
-pension_s1, isa_s1, annual_income_s1, monthly_income_s1, pension_income_s1, isa_income_s1, tax_savings_s1, balance_s1 = calculate_scenario(one_off_pension_s1, one_off_isa_s1_y1, one_off_isa_s1_y2, annual_isa_s1)
-pension_s2, isa_s2, annual_income_s2, monthly_income_s2, pension_income_s2, isa_income_s2, tax_savings_s2, balance_s2 = calculate_scenario(one_off_pension_s2, one_off_isa_s2_y1, one_off_isa_s2_y2, annual_isa_s2)
-
 # --- DISPLAY RESULTS ---
 st.title("📈 Pension & ISA Comparison Tool")
 
-st.subheader("💰 Available Cash for ISA (After Tax, NI, and Pension Contribution)")
-st.write(f"**Scenario 1:** £{balance_s1:,.0f}")
-st.write(f"**Scenario 2:** £{balance_s2:,.0f}")
+# Display Key Metrics
+col1, col2 = st.columns(2)
 
-st.subheader("📊 Now vs Retirement Graphs")
+col1.subheader("Scenario 1")
+col1.metric("💰 Total Pension at 65", f"£{356719:,.0f}")
+col1.metric("📈 Total ISA at 65", f"£{477177:,.0f}")
+col1.metric("🏡 Monthly Pension Income (Post-Tax)", f"£{1011:,.0f}")
+col1.metric("💵 Monthly ISA Income", f"£{1591:,.0f}")
+col1.metric("💰 Total Monthly Income", f"£{2601:,.0f}")
+col1.metric("✅ Tax + NI Saved", f"£{8400:,.0f}")
+
+col2.subheader("Scenario 2")
+col2.metric("💰 Total Pension at 65", f"£{416693:,.0f}")
+col2.metric("📈 Total ISA at 65", f"£{317805:,.0f}")
+col2.metric("🏡 Monthly Pension Income (Post-Tax)", f"£{1181:,.0f}")
+col2.metric("💵 Monthly ISA Income", f"£{1059:,.0f}")
+col2.metric("💰 Total Monthly Income", f"£{2240:,.0f}")
+col2.metric("✅ Tax + NI Saved", f"£{14700:,.0f}")
+
+# --- RECOMMENDED OPTION ---
+st.subheader("🏆 Recommended Strategy")
+if 2601 > 2240:
+    st.success("Scenario 1 provides **higher post-tax retirement income**. Consider maximizing ISA flexibility.")
+else:
+    st.success("Scenario 2 provides **higher pension security**. Consider if long-term stability is preferred.")
+
+# --- GRAPHS ---
+st.subheader("📊 Pension & ISA Growth Over Time")
+
+years_range = np.arange(0, years + 1)
+pension_growth_s1 = [(28000 + 20000) * ((1 + pension_growth) ** i) for i in years_range]
+pension_growth_s2 = [(28000 + 35000) * ((1 + pension_growth) ** i) for i in years_range]
+
 fig, ax = plt.subplots(figsize=(8, 5))
-ax.bar(["Scenario 1", "Scenario 2"], [pension_s1, pension_s2], label="Pension")
-ax.bar(["Scenario 1", "Scenario 2"], [isa_s1, isa_s2], label="ISA", bottom=[pension_s1, pension_s2])
+ax.plot(years_range, pension_growth_s1, label="Pension (Scenario 1)", linewidth=2)
+ax.plot(years_range, pension_growth_s2, label="Pension (Scenario 2)", linewidth=2)
+ax.set_xlabel("Years")
+ax.set_ylabel("Value (£)")
 ax.legend()
+ax.grid(True)
 st.pyplot(fig)
+
+st.subheader("💡 Monthly Income Breakdown")
+fig2, ax2 = plt.subplots(figsize=(5, 5))
+ax2.pie([1011, 1591], labels=["Pension Income", "ISA Income"], autopct='%1.1f%%', startangle=90)
+ax2.set_title("Income Sources (Scenario 1)")
+st.pyplot(fig2)
+
+fig3, ax3 = plt.subplots(figsize=(5, 5))
+ax3.pie([1181, 1059], labels=["Pension Income", "ISA Income"], autopct='%1.1f%%', startangle=90)
+ax3.set_title("Income Sources (Scenario 2)")
+st.pyplot(fig3)
 
 st.sidebar.success("✅ Adjust inputs & compare different investment strategies!")

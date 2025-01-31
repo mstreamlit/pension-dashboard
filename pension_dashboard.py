@@ -17,6 +17,12 @@ annual_pension_contrib = st.sidebar.number_input("Annual Pension Contribution (�
 retirement_age = st.sidebar.number_input("Retirement Age", min_value=50, max_value=75, value=65, step=1)
 years = retirement_age - 40  
 
+# ✅ ALSO SHOW CASH AVAILABLE IN SIDEBAR
+st.sidebar.subheader("💰 Cash Available to Invest in ISA")
+st.sidebar.write(f"**Option 1:** £{scenario_1['Cash Available']:,.0f}")
+st.sidebar.write(f"**Option 2:** £{scenario_2['Cash Available']:,.0f}")
+st.sidebar.write(f"**Option 3:** £{scenario_3['Cash Available']:,.0f}")
+
 # Pension Contribution Options
 st.sidebar.subheader("Pension Contribution Options")
 pension_opt1 = st.sidebar.number_input("Pension Contribution (Option 1) (£)", min_value=0, value=10554, step=500)
@@ -92,16 +98,53 @@ scenario_2 = calculate_scenario(pension_opt2, isa_opt2)
 scenario_3 = calculate_scenario(pension_opt3, isa_opt3)
 
 # --- DISPLAY CASH AVAILABLE IN STREAMLIT ---
-st.subheader("💰 Cash Available After Pension & Tax")
-st.write(f"**Option 1:** £{scenario_1['Cash Available']:,.0f}")
-st.write(f"**Option 2:** £{scenario_2['Cash Available']:,.0f}")
-st.write(f"**Option 3:** £{scenario_3['Cash Available']:,.0f}")
 
-# ✅ ALSO SHOW CASH AVAILABLE IN SIDEBAR
-st.sidebar.subheader("💰 Cash Available to Invest in ISA")
-st.sidebar.write(f"**Option 1:** £{scenario_1['Cash Available']:,.0f}")
-st.sidebar.write(f"**Option 2:** £{scenario_2['Cash Available']:,.0f}")
-st.sidebar.write(f"**Option 3:** £{scenario_3['Cash Available']:,.0f}")
+
+# --- DISPLAY BREAKDOWN OF EACH OPTION ---
+st.subheader("💡 Breakdown of Each Pension & ISA Option")
+col1, col2, col3 = st.columns(3)
+
+# Option 1
+with col1:
+    st.write("### Option 1")
+    st.write(f"**Pension Contribution:** £{scenario_1['Pension Contribution']:,.0f}")
+    st.write(f"**Tax Paid:** £{scenario_1['Tax Paid']:,.0f}")
+    st.write(f"**NI Paid:** £{scenario_1['NI Paid']:,.0f}")
+    st.write(f"**ISA Contribution:** £{scenario_1['ISA Contribution']:,.0f}")
+    st.write(f"**Pension Pot at Retirement:** £{scenario_1['Pension Pot at Retirement']:,.0f}")
+    st.write(f"**ISA Pot at Retirement:** £{scenario_1['ISA Pot at Retirement']:,.0f}")
+    st.write(f"**Total Monthly Income (Post-Tax):** £{scenario_1['Total Monthly Income Post-Tax']:,.0f}")
+
+# Option 2
+with col2:
+    st.write("### Option 2")
+    st.write(f"**Pension Contribution:** £{scenario_2['Pension Contribution']:,.0f}")
+    st.write(f"**Tax Paid:** £{scenario_2['Tax Paid']:,.0f}")
+    st.write(f"**NI Paid:** £{scenario_2['NI Paid']:,.0f}")
+    st.write(f"**ISA Contribution:** £{scenario_2['ISA Contribution']:,.0f}")
+    st.write(f"**Pension Pot at Retirement:** £{scenario_2['Pension Pot at Retirement']:,.0f}")
+    st.write(f"**ISA Pot at Retirement:** £{scenario_2['ISA Pot at Retirement']:,.0f}")
+    st.write(f"**Total Monthly Income (Post-Tax):** £{scenario_2['Total Monthly Income Post-Tax']:,.0f}")
+
+# Option 3
+with col3:
+    st.write("### Option 3")
+    st.write(f"**Pension Contribution:** £{scenario_3['Pension Contribution']:,.0f}")
+    st.write(f"**Tax Paid:** £{scenario_3['Tax Paid']:,.0f}")
+    st.write(f"**NI Paid:** £{scenario_3['NI Paid']:,.0f}")
+    st.write(f"**ISA Contribution:** £{scenario_3['ISA Contribution']:,.0f}")
+    st.write(f"**Pension Pot at Retirement:** £{scenario_3['Pension Pot at Retirement']:,.0f}")
+    st.write(f"**ISA Pot at Retirement:** £{scenario_3['ISA Pot at Retirement']:,.0f}")
+    st.write(f"**Total Monthly Income (Post-Tax):** £{scenario_3['Total Monthly Income Post-Tax']:,.0f}")
+
+# --- RECOMMENDED OPTION ---
+st.subheader("🏆 Recommended Option")
+if scenario_1["Total Monthly Income Post-Tax"] > scenario_2["Total Monthly Income Post-Tax"] and scenario_1["Total Monthly Income Post-Tax"] > scenario_3["Total Monthly Income Post-Tax"]:
+    st.success("Option 1 provides the **highest total monthly income** after retirement.")
+elif scenario_2["Total Monthly Income Post-Tax"] > scenario_3["Total Monthly Income Post-Tax"]:
+    st.success("Option 2 provides the **highest total monthly income** after retirement.")
+else:
+    st.success("Option 3 provides the **highest total monthly income** after retirement.")
 
 # --- STACKED BAR CHART ---
 st.subheader("📊 Stacked Bar Graph Comparing All Three Pension & ISA Scenarios")
@@ -113,12 +156,21 @@ ni_paid = np.array([scenario_1["NI Paid"], scenario_2["NI Paid"], scenario_3["NI
 isa_invested = np.array([scenario_1["ISA Contribution"], scenario_2["ISA Contribution"], scenario_3["ISA Contribution"]])
 pension_pot = np.array([scenario_1["Pension Pot at Retirement"], scenario_2["Pension Pot at Retirement"], scenario_3["Pension Pot at Retirement"]])
 isa_pot = np.array([scenario_1["ISA Pot at Retirement"], scenario_2["ISA Pot at Retirement"], scenario_3["ISA Pot at Retirement"]])
+monthly_income = np.array([scenario_1["Total Monthly Income Post-Tax"] * 12, scenario_2["Total Monthly Income Post-Tax"] * 12, scenario_3["Total Monthly Income Post-Tax"] * 12])
 
-fig, ax = plt.subplots(figsize=(8, 5))
+# Create the updated stacked bar chart
+fig, ax = plt.subplots(figsize=(8, 6))
 ax.bar(options, pension_contributions, label="Pension Contribution")
 ax.bar(options, tax_paid, bottom=pension_contributions, label="Tax Paid")
 ax.bar(options, ni_paid, bottom=pension_contributions + tax_paid, label="NI Paid")
 ax.bar(options, isa_invested, bottom=pension_contributions + tax_paid + ni_paid, label="ISA Invested")
 ax.bar(options, pension_pot, bottom=pension_contributions + tax_paid + ni_paid + isa_invested, label="Pension Pot at Retirement")
-ax.legend()
+ax.bar(options, isa_pot, bottom=pension_contributions + tax_paid + ni_paid + isa_invested + pension_pot, label="ISA Pot at Retirement")
+ax.bar(options, monthly_income, bottom=pension_contributions + tax_paid + ni_paid + isa_invested + pension_pot + isa_pot, label="Total Monthly Income (Annualized)")
+
+ax.set_ylabel("Value (£)")
+ax.set_title("Stacked Bar Graph Comparing Pension & ISA Scenarios")
+ax.legend(loc="upper left")
+plt.tight_layout()
 st.pyplot(fig)
+

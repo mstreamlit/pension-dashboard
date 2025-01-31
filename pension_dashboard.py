@@ -34,27 +34,54 @@ annual_isa_s2 = st.sidebar.number_input("Annual ISA Contribution (S2, Years 3-25
 pension_growth = st.sidebar.number_input("Pension Growth Rate (%)", min_value=0.0, max_value=10.0, value=5.7, step=0.1) / 100
 isa_growth = st.sidebar.number_input("ISA Growth Rate (%)", min_value=0.0, max_value=10.0, value=7.0, step=0.1) / 100
 
+# --- CASH ON HAND CALCULATION ---
+tax_paid_s1 = (annual_income + one_off_income - one_off_pension_s1) * 0.40  # Approximate tax
+ni_paid_s1 = (annual_income + one_off_income - one_off_pension_s1) * 0.02  # NI
+cash_on_hand_s1 = (annual_income + one_off_income) - one_off_pension_s1 - tax_paid_s1 - ni_paid_s1
+
+tax_paid_s2 = (annual_income + one_off_income - one_off_pension_s2) * 0.40
+ni_paid_s2 = (annual_income + one_off_income - one_off_pension_s2) * 0.02
+cash_on_hand_s2 = (annual_income + one_off_income) - one_off_pension_s2 - tax_paid_s2 - ni_paid_s2
+
 # --- DISPLAY RESULTS ---
 st.title("📈 Pension & ISA Comparison Tool")
 
-# Display Key Metrics
 col1, col2 = st.columns(2)
 
 col1.subheader("Scenario 1")
+col1.metric("💰 Cash on Hand", f"£{cash_on_hand_s1:,.0f}")
 col1.metric("💰 Total Pension at 65", f"£{356719:,.0f}")
 col1.metric("📈 Total ISA at 65", f"£{477177:,.0f}")
 col1.metric("🏡 Monthly Pension Income (Post-Tax)", f"£{1011:,.0f}")
 col1.metric("💵 Monthly ISA Income", f"£{1591:,.0f}")
 col1.metric("💰 Total Monthly Income", f"£{2601:,.0f}")
-col1.metric("✅ Tax + NI Saved", f"£{8400:,.0f}")
 
 col2.subheader("Scenario 2")
+col2.metric("💰 Cash on Hand", f"£{cash_on_hand_s2:,.0f}")
 col2.metric("💰 Total Pension at 65", f"£{416693:,.0f}")
 col2.metric("📈 Total ISA at 65", f"£{317805:,.0f}")
 col2.metric("🏡 Monthly Pension Income (Post-Tax)", f"£{1181:,.0f}")
 col2.metric("💵 Monthly ISA Income", f"£{1059:,.0f}")
 col2.metric("💰 Total Monthly Income", f"£{2240:,.0f}")
-col2.metric("✅ Tax + NI Saved", f"£{14700:,.0f}")
+
+# --- GRAPHS FOR EACH SCENARIO ---
+st.subheader("📊 Financial Breakdown")
+
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.bar(["Pension Contribution", "Tax & NI Paid", "ISA Invested", "Remaining Cash"], 
+       [one_off_pension_s1, tax_paid_s1 + ni_paid_s1, one_off_isa_s1_y1 + one_off_isa_s1_y2, cash_on_hand_s1 - one_off_isa_s1_y1 - one_off_isa_s1_y2], 
+       label="Scenario 1")
+ax.set_ylabel("Value (£)")
+ax.legend()
+st.pyplot(fig)
+
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.bar(["Pension Contribution", "Tax & NI Paid", "ISA Invested", "Remaining Cash"], 
+       [one_off_pension_s2, tax_paid_s2 + ni_paid_s2, one_off_isa_s2_y1 + one_off_isa_s2_y2, cash_on_hand_s2 - one_off_isa_s2_y1 - one_off_isa_s2_y2], 
+       label="Scenario 2")
+ax.set_ylabel("Value (£)")
+ax.legend()
+st.pyplot(fig)
 
 # --- RECOMMENDED OPTION ---
 st.subheader("🏆 Recommended Strategy")
@@ -62,32 +89,5 @@ if 2601 > 2240:
     st.success("Scenario 1 provides **higher post-tax retirement income**. Consider maximizing ISA flexibility.")
 else:
     st.success("Scenario 2 provides **higher pension security**. Consider if long-term stability is preferred.")
-
-# --- GRAPHS ---
-st.subheader("📊 Pension & ISA Growth Over Time")
-
-years_range = np.arange(0, years + 1)
-pension_growth_s1 = [(28000 + 20000) * ((1 + pension_growth) ** i) for i in years_range]
-pension_growth_s2 = [(28000 + 35000) * ((1 + pension_growth) ** i) for i in years_range]
-
-fig, ax = plt.subplots(figsize=(8, 5))
-ax.plot(years_range, pension_growth_s1, label="Pension (Scenario 1)", linewidth=2)
-ax.plot(years_range, pension_growth_s2, label="Pension (Scenario 2)", linewidth=2)
-ax.set_xlabel("Years")
-ax.set_ylabel("Value (£)")
-ax.legend()
-ax.grid(True)
-st.pyplot(fig)
-
-st.subheader("💡 Monthly Income Breakdown")
-fig2, ax2 = plt.subplots(figsize=(5, 5))
-ax2.pie([1011, 1591], labels=["Pension Income", "ISA Income"], autopct='%1.1f%%', startangle=90)
-ax2.set_title("Income Sources (Scenario 1)")
-st.pyplot(fig2)
-
-fig3, ax3 = plt.subplots(figsize=(5, 5))
-ax3.pie([1181, 1059], labels=["Pension Income", "ISA Income"], autopct='%1.1f%%', startangle=90)
-ax3.set_title("Income Sources (Scenario 2)")
-st.pyplot(fig3)
 
 st.sidebar.success("✅ Adjust inputs & compare different investment strategies!")

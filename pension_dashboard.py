@@ -59,17 +59,19 @@ def calculate_ni(income):
 
 # --- CALCULATE SCENARIOS ---
 def calculate_scenario(pension_contribution):
-    if calculation_type == "Total Income Calculation (Annual + One-Off)":
-        taxable_income = (annual_income + one_off_income) - pension_contribution
-    else:  # One-Off Payment Calculation
-        total_income_for_tax = annual_income + one_off_income
-        taxable_income = one_off_income - pension_contribution
+    # Ensure total income for tax calculation is always defined
+    total_income_for_tax = annual_income + one_off_income  # Used for tax rate determination
 
-    # Apply tax based on total annual income but taxable income based on one-off payment
+    if calculation_type == "Total Income Calculation (Annual + One-Off)":
+        taxable_income = total_income_for_tax - pension_contribution  # Uses full income
+    else:  # One-Off Payment Calculation (taxable income is just one-off, tax based on full income)
+        taxable_income = one_off_income - pension_contribution  
+
+    # Calculate tax using total income but applying it to taxable income only
     tax_paid = calculate_tax(total_income_for_tax) - calculate_tax(total_income_for_tax - taxable_income)
     ni_paid = calculate_ni(taxable_income)
     
-    # Cash Available
+    # Cash Available Calculation
     cash_available = taxable_income - tax_paid - ni_paid
     
     return {
@@ -79,6 +81,7 @@ def calculate_scenario(pension_contribution):
         "NI Paid": ni_paid,
         "Cash Available": cash_available
     }
+
 
 # Compute all three options
 scenario_1 = calculate_scenario(pension_opt1)

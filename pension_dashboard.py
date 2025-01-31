@@ -17,11 +17,7 @@ annual_pension_contrib = st.sidebar.number_input("Annual Pension Contribution (�
 retirement_age = st.sidebar.number_input("Retirement Age", min_value=50, max_value=75, value=65, step=1)
 years = retirement_age - 40  
 
-# ✅ ALSO SHOW CASH AVAILABLE IN SIDEBAR
-st.sidebar.subheader("💰 Cash Available to Invest in ISA")
-st.sidebar.write(f"**Option 1:** £{scenario_1['Cash Available']:,.0f}")
-st.sidebar.write(f"**Option 2:** £{scenario_2['Cash Available']:,.0f}")
-st.sidebar.write(f"**Option 3:** £{scenario_3['Cash Available']:,.0f}")
+
 
 # Pension Contribution Options
 st.sidebar.subheader("Pension Contribution Options")
@@ -98,7 +94,11 @@ scenario_2 = calculate_scenario(pension_opt2, isa_opt2)
 scenario_3 = calculate_scenario(pension_opt3, isa_opt3)
 
 # --- DISPLAY CASH AVAILABLE IN STREAMLIT ---
-
+# ✅ ALSO SHOW CASH AVAILABLE IN SIDEBAR
+st.sidebar.subheader("💰 Cash Available to Invest in ISA")
+st.sidebar.write(f"**Option 1:** £{scenario_1['Cash Available']:,.0f}")
+st.sidebar.write(f"**Option 2:** £{scenario_2['Cash Available']:,.0f}")
+st.sidebar.write(f"**Option 3:** £{scenario_3['Cash Available']:,.0f}")
 
 # --- DISPLAY BREAKDOWN OF EACH OPTION ---
 st.subheader("💡 Breakdown of Each Pension & ISA Option")

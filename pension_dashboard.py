@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -21,10 +20,16 @@ isa_limit = 20000  # ISA annual contribution limit
 # Scenario 1 Inputs
 st.sidebar.subheader("Scenario 1: Pension & ISA Strategy")
 one_off_pension_s1 = st.sidebar.number_input("One-Off Pension Contribution (S1) (£)", min_value=0, value=20000, step=500)
+one_off_isa_s1_y1 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 1) (£)", min_value=0, value=20000, step=500)
+one_off_isa_s1_y2 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 2) (£)", min_value=0, value=20000, step=500)
+annual_isa_s1 = st.sidebar.number_input("Annual ISA Contribution (S1, Years 3-25) (£)", min_value=0, value=5000, step=500)
 
 # Scenario 2 Inputs
 st.sidebar.subheader("Scenario 2: Alternative Pension & ISA Strategy")
 one_off_pension_s2 = st.sidebar.number_input("One-Off Pension Contribution (S2) (£)", min_value=0, value=35000, step=500)
+one_off_isa_s2_y1 = st.sidebar.number_input("ISA One-Off Contribution (S2, Year 1) (£)", min_value=0, value=15000, step=500)
+one_off_isa_s2_y2 = st.sidebar.number_input("ISA One-Off Contribution (S2, Year 2) (£)", min_value=0, value=15000, step=500)
+annual_isa_s2 = st.sidebar.number_input("Annual ISA Contribution (S2, Years 3-25) (£)", min_value=0, value=3000, step=500)
 
 # Growth Rates
 pension_growth = st.sidebar.number_input("Pension Growth Rate (%)", min_value=0.0, max_value=10.0, value=5.7, step=0.1) / 100
@@ -43,7 +48,7 @@ def calculate_ni(income):
     return income * 0.02 if income > 50270 else 0
 
 # --- SCENARIO CALCULATIONS ---
-def calculate_scenario(one_off_pension):
+def calculate_scenario(one_off_pension, one_off_isa_y1, one_off_isa_y2, annual_isa):
     total_income = annual_income + one_off_income
     
     # Tax and NI calculations before pension contribution
@@ -62,12 +67,14 @@ def calculate_scenario(one_off_pension):
     # Balance after Tax & NI
     balance_after_tax = total_income - one_off_pension - tax_after - ni_after
 
-    # ISA Contribution Auto-Split
-    isa_auto_contribution = min(balance_after_tax, isa_limit)
-    isa_carryover = max(0, balance_after_tax - isa_limit)
+    # ISA Contributions & Growth
+    isa_year_1 = min(balance_after_tax, one_off_isa_y1)
+    isa_year_2 = min(balance_after_tax - isa_year_1, one_off_isa_y2)
+    isa_annual_years_3_25 = np.array([annual_isa] * (years - 2))
 
-    # Future ISA & Pension Value
-    isa_value = isa_auto_contribution * ((1 + isa_growth) ** years) + isa_carryover * ((1 + isa_growth) ** (years - 1))
+    isa_value = isa_year_1 * ((1 + isa_growth) ** years) + isa_year_2 * ((1 + isa_growth) ** (years - 1))
+    isa_value += sum([isa_annual_years_3_25[i] * ((1 + isa_growth) ** (years - (i + 3))) for i in range(len(isa_annual_years_3_25))])
+
     pension_value = (current_pension_pot + one_off_pension) * ((1 + pension_growth) ** years)
     pension_value += annual_pension_contrib * sum([(1 + pension_growth) ** (years - i) for i in range(1, years + 1)])
 
@@ -78,11 +85,11 @@ def calculate_scenario(one_off_pension):
     monthly_post_tax_income = annual_post_tax_income / 12
 
     return (pension_value, isa_value, annual_post_tax_income, monthly_post_tax_income, 
-            annual_pension_income, annual_isa_income, total_tax_ni_savings, balance_after_tax)
+            annual_pension_income, annual_isa_income, total_tax_ni_savings)
 
 # --- COMPUTE RESULTS ---
-pension_s1, isa_s1, annual_income_s1, monthly_income_s1, pension_income_s1, isa_income_s1, tax_savings_s1, balance_s1 = calculate_scenario(one_off_pension_s1)
-pension_s2, isa_s2, annual_income_s2, monthly_income_s2, pension_income_s2, isa_income_s2, tax_savings_s2, balance_s2 = calculate_scenario(one_off_pension_s2)
+pension_s1, isa_s1, annual_income_s1, monthly_income_s1, pension_income_s1, isa_income_s1, tax_savings_s1 = calculate_scenario(one_off_pension_s1, one_off_isa_s1_y1, one_off_isa_s1_y2, annual_isa_s1)
+pension_s2, isa_s2, annual_income_s2, monthly_income_s2, pension_income_s2, isa_income_s2, tax_savings_s2 = calculate_scenario(one_off_pension_s2, one_off_isa_s2_y1, one_off_isa_s2_y2, annual_isa_s2)
 
 # --- DISPLAY RESULTS ---
 st.title("📈 Pension & ISA Comparison Tool")
@@ -100,25 +107,4 @@ col2.metric("📈 Future ISA", f"£{isa_s2:,.0f}")
 col2.metric("🏡 Annual Income", f"£{annual_income_s2:,.0f}")
 col2.metric("💰 Tax + NI Saved", f"£{tax_savings_s2:,.0f}")
 
-# --- GRAPHS ---
-st.subheader("📊 Now vs Retirement Comparison")
-
-fig, ax = plt.subplots(figsize=(8, 5))
-x_labels = ["Scenario 1", "Scenario 2"]
-pension_values = [pension_s1, pension_s2]
-isa_values = [isa_s1, isa_s2]
-
-ax.bar(x_labels, pension_values, label="Pension (Retirement)", alpha=0.7)
-ax.bar(x_labels, isa_values, label="ISA (Retirement)", alpha=0.7, bottom=pension_values)
-ax.set_ylabel("Value (£)")
-ax.legend()
-st.pyplot(fig)
-
-st.sidebar.success("✅ Adjust inputs & see recommendations instantly!")
-
-# --- Recommendation ---
-st.subheader("🔍 Recommended Option")
-if annual_income_s1 > annual_income_s2:
-    st.success("Scenario 1 provides **higher post-tax retirement income**. Consider maximizing ISA flexibility.")
-else:
-    st.success("Scenario 2 provides **higher pension security**. Consider if long-term stability is preferred.")
+st.sidebar.success("✅ Adjust inputs & compare different investment strategies!")

@@ -51,21 +51,22 @@ def calculate_ni(income):
 def calculate_scenario(one_off_pension, one_off_isa_y1, one_off_isa_y2, annual_isa):
     total_income = annual_income + one_off_income
     
-    # Tax and NI calculations before pension contribution
+    # Tax and NI before pension contribution
     tax_before = calculate_tax(total_income)
     ni_before = calculate_ni(total_income)
     
-    # After pension contribution
-    tax_after = calculate_tax(total_income - one_off_pension)
-    ni_after = calculate_ni(total_income - one_off_pension)
+    # Tax and NI after pension contribution
+    taxable_income = total_income - one_off_pension
+    tax_after = calculate_tax(taxable_income)
+    ni_after = calculate_ni(taxable_income)
     
-    # Tax savings
+    # Tax & NI savings
     tax_savings = tax_before - tax_after
     ni_savings = ni_before - ni_after
     total_tax_ni_savings = tax_savings + ni_savings
 
-    # Balance after Tax & NI
-    balance_after_tax = total_income - one_off_pension - tax_after - ni_after
+    # Correct Available Cash Calculation
+    balance_after_tax = taxable_income - tax_after - ni_after
 
     # ISA Contributions & Growth
     isa_year_1 = min(balance_after_tax, one_off_isa_y1)
@@ -104,11 +105,5 @@ ax.bar(["Scenario 1", "Scenario 2"], [pension_s1, pension_s2], label="Pension")
 ax.bar(["Scenario 1", "Scenario 2"], [isa_s1, isa_s2], label="ISA", bottom=[pension_s1, pension_s2])
 ax.legend()
 st.pyplot(fig)
-
-st.subheader("💡 Recommendation")
-if annual_income_s1 > annual_income_s2:
-    st.success("Scenario 1 provides **higher post-tax retirement income**. Consider maximizing ISA flexibility.")
-else:
-    st.success("Scenario 2 provides **higher pension security**. Consider if long-term stability is preferred.")
 
 st.sidebar.success("✅ Adjust inputs & compare different investment strategies!")

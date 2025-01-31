@@ -57,8 +57,12 @@ def calculate_scenario(pension_contribution, isa_contribution):
     taxable_income = total_income - pension_contribution
     tax_paid = calculate_corrected_tax(taxable_income)
     ni_paid = calculate_corrected_ni(taxable_income)
-    cash_on_hand = total_income - pension_contribution - tax_paid - ni_paid
-    isa_actual = min(isa_contribution, cash_on_hand)  
+    
+    # ✅ Corrected Cash Available Calculation
+    cash_available = total_income - pension_contribution - tax_paid - ni_paid
+    
+    # ISA Contribution Cannot Exceed Cash Available
+    isa_actual = min(isa_contribution, cash_available)  
 
     # Future values of pension & ISA
     pension_pot = (current_pension_pot + pension_contribution) * ((1 + pension_growth) ** years)
@@ -75,7 +79,7 @@ def calculate_scenario(pension_contribution, isa_contribution):
         "Pension Contribution": pension_contribution,
         "Tax Paid": tax_paid,
         "NI Paid": ni_paid,
-        "Cash on Hand": cash_on_hand,
+        "Cash Available": cash_available,  # ✅ ADDED CASH AVAILABLE
         "ISA Contribution": isa_actual,
         "Pension Pot at Retirement": pension_pot,
         "ISA Pot at Retirement": isa_pot,
@@ -87,24 +91,34 @@ scenario_1 = calculate_scenario(pension_opt1, isa_opt1)
 scenario_2 = calculate_scenario(pension_opt2, isa_opt2)
 scenario_3 = calculate_scenario(pension_opt3, isa_opt3)
 
+# --- DISPLAY CASH AVAILABLE IN STREAMLIT ---
+st.subheader("💰 Cash Available After Pension & Tax")
+st.write(f"**Option 1:** £{scenario_1['Cash Available']:,.0f}")
+st.write(f"**Option 2:** £{scenario_2['Cash Available']:,.0f}")
+st.write(f"**Option 3:** £{scenario_3['Cash Available']:,.0f}")
+
+# ✅ ALSO SHOW CASH AVAILABLE IN SIDEBAR
+st.sidebar.subheader("💰 Cash Available to Invest in ISA")
+st.sidebar.write(f"**Option 1:** £{scenario_1['Cash Available']:,.0f}")
+st.sidebar.write(f"**Option 2:** £{scenario_2['Cash Available']:,.0f}")
+st.sidebar.write(f"**Option 3:** £{scenario_3['Cash Available']:,.0f}")
+
 # --- STACKED BAR CHART ---
-st.subheader("📊 Comparison of All Pension & ISA Options")
+st.subheader("📊 Stacked Bar Graph Comparing All Three Pension & ISA Scenarios")
 
 options = ["Option 1", "Option 2", "Option 3"]
-pension_contributions = [scenario_1["Pension Contribution"], scenario_2["Pension Contribution"], scenario_3["Pension Contribution"]]
-tax_paid = [scenario_1["Tax Paid"], scenario_2["Tax Paid"], scenario_3["Tax Paid"]]
-ni_paid = [scenario_1["NI Paid"], scenario_2["NI Paid"], scenario_3["NI Paid"]]
-isa_invested = [scenario_1["ISA Contribution"], scenario_2["ISA Contribution"], scenario_3["ISA Contribution"]]
-pension_pot = [scenario_1["Pension Pot at Retirement"], scenario_2["Pension Pot at Retirement"], scenario_3["Pension Pot at Retirement"]]
-isa_pot = [scenario_1["ISA Pot at Retirement"], scenario_2["ISA Pot at Retirement"], scenario_3["ISA Pot at Retirement"]]
-monthly_income = [scenario_1["Total Monthly Income Post-Tax"] * 12, scenario_2["Total Monthly Income Post-Tax"] * 12, scenario_3["Total Monthly Income Post-Tax"] * 12]
+pension_contributions = np.array([scenario_1["Pension Contribution"], scenario_2["Pension Contribution"], scenario_3["Pension Contribution"]])
+tax_paid = np.array([scenario_1["Tax Paid"], scenario_2["Tax Paid"], scenario_3["Tax Paid"]])
+ni_paid = np.array([scenario_1["NI Paid"], scenario_2["NI Paid"], scenario_3["NI Paid"]])
+isa_invested = np.array([scenario_1["ISA Contribution"], scenario_2["ISA Contribution"], scenario_3["ISA Contribution"]])
+pension_pot = np.array([scenario_1["Pension Pot at Retirement"], scenario_2["Pension Pot at Retirement"], scenario_3["Pension Pot at Retirement"]])
+isa_pot = np.array([scenario_1["ISA Pot at Retirement"], scenario_2["ISA Pot at Retirement"], scenario_3["ISA Pot at Retirement"]])
 
 fig, ax = plt.subplots(figsize=(8, 5))
 ax.bar(options, pension_contributions, label="Pension Contribution")
 ax.bar(options, tax_paid, bottom=pension_contributions, label="Tax Paid")
-ax.bar(options, ni_paid, bottom=np.array(pension_contributions) + np.array(tax_paid), label="NI Paid")
-ax.bar(options, isa_invested, bottom=np.array(pension_contributions) + np.array(tax_paid) + np.array(ni_paid), label="ISA Invested")
-ax.bar(options, pension_pot, bottom=np.array(pension_contributions) + np.array(tax_paid) + np.array(ni_paid) + np.array(isa_invested), label="Pension Pot at Retirement")
-ax.bar(options, isa_pot, bottom=np.array(pension_contributions) + np.array(tax_paid) + np.array(ni_paid) + np.array(isa_invested) + np.array(pension_pot), label="ISA Pot at Retirement")
+ax.bar(options, ni_paid, bottom=pension_contributions + tax_paid, label="NI Paid")
+ax.bar(options, isa_invested, bottom=pension_contributions + tax_paid + ni_paid, label="ISA Invested")
+ax.bar(options, pension_pot, bottom=pension_contributions + tax_paid + ni_paid + isa_invested, label="Pension Pot at Retirement")
 ax.legend()
 st.pyplot(fig)

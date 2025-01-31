@@ -14,17 +14,17 @@ one_off_income = st.sidebar.number_input("One-Off Income (£)", min_value=0, max
 current_pension_pot = st.sidebar.number_input("Current Pension Pot (£)", min_value=0, value=28000, step=500)
 annual_pension_contrib = st.sidebar.number_input("Annual Pension Contribution (£)", min_value=0, value=3133, step=100)
 retirement_age = st.sidebar.number_input("Retirement Age", min_value=50, max_value=75, value=65, step=1)
-years = retirement_age - 40  # Assume working from age 40
-isa_limit = 20000  # ISA annual contribution limit
+years = retirement_age - 40  
+isa_limit = 20000  
 
-# Scenario 1 Inputs
+# --- Scenario 1 Inputs ---
 st.sidebar.subheader("Scenario 1: Pension & ISA Strategy")
 one_off_pension_s1 = st.sidebar.number_input("One-Off Pension Contribution (S1) (£)", min_value=0, value=20000, step=500)
 one_off_isa_s1_y1 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 1) (£)", min_value=0, value=20000, step=500)
 one_off_isa_s1_y2 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 2) (£)", min_value=0, value=20000, step=500)
 annual_isa_s1 = st.sidebar.number_input("Annual ISA Contribution (S1, Years 3-25) (£)", min_value=0, value=5000, step=500)
 
-# Scenario 2 Inputs
+# --- Scenario 2 Inputs ---
 st.sidebar.subheader("Scenario 2: Alternative Pension & ISA Strategy")
 one_off_pension_s2 = st.sidebar.number_input("One-Off Pension Contribution (S2) (£)", min_value=0, value=35000, step=500)
 one_off_isa_s2_y1 = st.sidebar.number_input("ISA One-Off Contribution (S2, Year 1) (£)", min_value=0, value=15000, step=500)
@@ -104,5 +104,11 @@ ax.bar(["Scenario 1", "Scenario 2"], [pension_s1, pension_s2], label="Pension")
 ax.bar(["Scenario 1", "Scenario 2"], [isa_s1, isa_s2], label="ISA", bottom=[pension_s1, pension_s2])
 ax.legend()
 st.pyplot(fig)
+
+st.subheader("💡 Recommendation")
+if annual_income_s1 > annual_income_s2:
+    st.success("Scenario 1 provides **higher post-tax retirement income**. Consider maximizing ISA flexibility.")
+else:
+    st.success("Scenario 2 provides **higher pension security**. Consider if long-term stability is preferred.")
 
 st.sidebar.success("✅ Adjust inputs & compare different investment strategies!")

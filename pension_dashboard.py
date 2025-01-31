@@ -148,7 +148,7 @@ else:
 
 # --- STACKED BAR CHART ---
 # --- STACKED BAR CHART WITH FIXES ---
-st.subheader("📊 Improved Stacked Bar Graph Comparing All Three Pension & ISA Scenarios")
+st.subheader("📊 Comparison ")
 
 # Define the options (if not already defined)
 options = ["Option 1", "Option 2", "Option 3"]

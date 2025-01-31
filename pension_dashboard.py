@@ -17,14 +17,14 @@ retirement_age = st.sidebar.number_input("Retirement Age", min_value=50, max_val
 years = retirement_age - 40  # Assume working from age 40
 isa_limit = 20000  # ISA annual contribution limit
 
-# --- Scenario 1 Inputs ---
+# Scenario 1 Inputs
 st.sidebar.subheader("Scenario 1: Pension & ISA Strategy")
 one_off_pension_s1 = st.sidebar.number_input("One-Off Pension Contribution (S1) (£)", min_value=0, value=20000, step=500)
 one_off_isa_s1_y1 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 1) (£)", min_value=0, value=20000, step=500)
 one_off_isa_s1_y2 = st.sidebar.number_input("ISA One-Off Contribution (S1, Year 2) (£)", min_value=0, value=20000, step=500)
 annual_isa_s1 = st.sidebar.number_input("Annual ISA Contribution (S1, Years 3-25) (£)", min_value=0, value=5000, step=500)
 
-# --- Scenario 2 Inputs ---
+# Scenario 2 Inputs
 st.sidebar.subheader("Scenario 2: Alternative Pension & ISA Strategy")
 one_off_pension_s2 = st.sidebar.number_input("One-Off Pension Contribution (S2) (£)", min_value=0, value=35000, step=500)
 one_off_isa_s2_y1 = st.sidebar.number_input("ISA One-Off Contribution (S2, Year 1) (£)", min_value=0, value=15000, step=500)

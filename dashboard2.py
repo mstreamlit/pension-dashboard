@@ -121,7 +121,6 @@ The dashboard allows you to:
     st.sidebar.markdown("##### Option 1")
     option1_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=0, key="option1_pension")
     option1_isa = st.sidebar.number_input("ISA Contribution (£)", value=20000, key="option1_isa")
-    # Total pension = annual pension + extra for this option
     option1_total_pension = annual_pension + option1_extra_pension
     taxable_income_option1 = max(income_based - option1_total_pension, 0)
     tax_option1 = compute_tax(taxable_income_option1)
@@ -160,7 +159,7 @@ The dashboard allows you to:
     # -------------------------------
     # Main Calculations for Each Scenario
     # -------------------------------
-    # We also include the ISA Contribution as a field for the graph.
+    # Also include ISA Contribution as a field for graphing.
     scenarios = {
         "Option 1": {"pension": option1_extra_pension, "isa": option1_isa},
         "Option 2": {"pension": option2_extra_pension, "isa": option2_isa},
@@ -183,7 +182,6 @@ The dashboard allows you to:
         # -------------------------------
         # Future Investment Projections
         # -------------------------------
-        # Future Pension Pot Calculation
         future_current_pot = current_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         if pension_growth_rate != 0:
             future_annual_contrib = annual_pension * (((1 + pension_growth_rate) ** years_to_retirement - 1) / pension_growth_rate)
@@ -192,7 +190,6 @@ The dashboard allows you to:
         future_extra_pension = extra_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         future_pension_pot = future_current_pot + future_annual_contrib + future_extra_pension
 
-        # Future ISA Pot Calculation
         future_isa_pot = isa_contrib * ((1 + isa_growth_rate) ** years_to_retirement)
 
         # -------------------------------
@@ -216,7 +213,6 @@ The dashboard allows you to:
             "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income
         })
 
-    # Create a DataFrame from the results and display it
     df = pd.DataFrame(results)
     st.markdown("---")
     st.header("2️⃣ Results Displayed")
@@ -228,7 +224,6 @@ The dashboard allows you to:
     # -------------------------------
     # Recommended Option Calculation
     # -------------------------------
-    # Balancing normalized Cash Available and Monthly Retirement Income equally (50:50 weighting)
     cash_values = df["Cash Available (£)"]
     income_values = df["Monthly Retirement Income (Post-Tax) (£)"]
     cash_min, cash_max = cash_values.min(), cash_values.max()
@@ -247,51 +242,56 @@ The dashboard allows you to:
     st.subheader(f"🏆 Recommended Option: **{recommended_option}** (Best balance of Cash & Post-Tax Income)")
 
     # -------------------------------
-    # Stacked Bar Chart Visualization
+    # Graph 1: Current Financial Breakdown
     # -------------------------------
-    st.header("3️⃣ Stacked Bar Graph Comparing Scenarios")
+    st.header("3️⃣ Current Financial Breakdown")
     labels = df["Option"].tolist()
     x = np.arange(len(labels))
     width = 0.5
 
-    # Retrieve each component from the DataFrame
-    pension = df["Total Pension Contribution (£)"]
-    tax_ni = df["Tax Paid (£)"] + df["NI Paid (£)"]
-    isa_contrib = df["ISA Contribution (£)"]
-    cash_avail = df["Cash Available (£)"]
-    pension_pot = df["Future Pension Pot (£)"]
-    isa_pot = df["Future ISA Pot (£)"]
-    monthly_income = df["Monthly Retirement Income (Post-Tax) (£)"]
+    pension = df["Total Pension Contribution (£)"].tolist()
+    tax_ni = (df["Tax Paid (£)"] + df["NI Paid (£)"]).tolist()
+    isa_contrib = df["ISA Contribution (£)"].tolist()
+    cash_avail = df["Cash Available (£)"].tolist()
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
     bottom = np.zeros(len(labels))
+    bar1 = ax1.bar(x, pension, width, label="Pension Contribution")
+    bottom += np.array(pension)
+    bar2 = ax1.bar(x, tax_ni, width, bottom=bottom, label="Tax + NI Paid")
+    bottom += np.array(tax_ni)
+    bar3 = ax1.bar(x, isa_contrib, width, bottom=bottom, label="ISA Contribution")
+    bottom += np.array(isa_contrib)
+    bar4 = ax1.bar(x, cash_avail, width, bottom=bottom, label="Cash Available")
+    ax1.set_ylabel("Amount (£)")
+    ax1.set_title("Current Financial Breakdown")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(labels)
+    ax1.legend(loc="upper left")
+    st.pyplot(fig1)
 
-    bar1 = ax.bar(x, pension, width, label="Pension Contribution")
-    bottom += pension
+    # -------------------------------
+    # Graph 2: Retirement Projection Breakdown
+    # -------------------------------
+    st.header("4️⃣ Retirement Projection Breakdown")
+    # For annual income, we multiply monthly retirement income by 12.
+    pension_pot = df["Future Pension Pot (£)"].tolist()
+    isa_pot = df["Future ISA Pot (£)"].tolist()
+    annual_income = (df["Monthly Retirement Income (Post-Tax) (£)"] * 12).tolist()
 
-    bar2 = ax.bar(x, tax_ni, width, bottom=bottom, label="Tax + NI Paid")
-    bottom += tax_ni
-
-    bar3 = ax.bar(x, isa_contrib, width, bottom=bottom, label="ISA Contribution")
-    bottom += isa_contrib
-
-    bar4 = ax.bar(x, cash_avail, width, bottom=bottom, label="Cash Available")
-    bottom += cash_avail
-
-    bar5 = ax.bar(x, pension_pot, width, bottom=bottom, label="Pension Pot")
-    bottom += pension_pot
-
-    bar6 = ax.bar(x, isa_pot, width, bottom=bottom, label="ISA Pot")
-    bottom += isa_pot
-
-    bar7 = ax.bar(x, monthly_income, width, bottom=bottom, label="Monthly Income (Post-Tax)")
-
-    ax.set_ylabel("Amount (£)")
-    ax.set_title("Breakdown of Each Contribution Option")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.3), ncol=2)
-    st.pyplot(fig)
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    bottom = np.zeros(len(labels))
+    bar1 = ax2.bar(x, pension_pot, width, label="Pension Pot")
+    bottom += np.array(pension_pot)
+    bar2 = ax2.bar(x, isa_pot, width, bottom=bottom, label="ISA Pot")
+    bottom += np.array(isa_pot)
+    bar3 = ax2.bar(x, annual_income, width, bottom=bottom, label="Annual Income (Post-Tax)")
+    ax2.set_ylabel("Amount (£)")
+    ax2.set_title("Retirement Projection Breakdown")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(labels)
+    ax2.legend(loc="upper left")
+    st.pyplot(fig2)
 
     st.markdown("---")
     st.write("### Summary")
@@ -299,7 +299,7 @@ The dashboard allows you to:
         """
 ✅ Dynamic tax & NI calculations based on UK rates  
 ✅ Separate, real-time cash available calculations for each scenario displayed in the sidebar  
-✅ Retirement projections for pension & ISA pots  
+✅ Two separate graphs: one for current contributions & liquidity and another for retirement projections  
 ✅ Automatic recommendation based on balanced cash liquidity and post-tax retirement income  
         """
     )

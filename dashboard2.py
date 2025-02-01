@@ -94,7 +94,7 @@ The dashboard allows you to:
         )
     )
 
-    # Determine income base based on toggle
+    # Determine the income base based on the toggle
     if calc_method == "Total Income Calculation (Annual + One-Off)":
         income_based = annual_salary + one_off_income
     else:
@@ -230,7 +230,11 @@ The dashboard allows you to:
     # -------------------------------
     # Prepare Data for Graphs
     # -------------------------------
-    options_list = df["Option"].tolist()
+    # Create new x-axis labels that show: "Option #: <additional pension contribution>"
+    # Note: additional pension = Total Pension Contribution - annual_pension.
+    option_labels = [f"{row['Option']}: {row['Total Pension Contribution (£)'] - annual_pension:,.0f}" 
+                     for idx, row in df.iterrows()]
+
     # Graph 1: Current Financial Breakdown (6 components)
     pension_vals = df["Total Pension Contribution (£)"].tolist()
     tax_ni_vals = (df["Tax Paid (£)"] + df["NI Paid (£)"]).tolist()
@@ -240,10 +244,10 @@ The dashboard allows you to:
     isa_pot_vals = df["Future ISA Pot (£)"].tolist()
 
     # Graph 2: Retirement Income Breakdown (Stacked)
-    # For pension, split into:
-    # - Pension Tax = Future Pension Pot * 0.75 * 0.04 * 0.2 / 12
-    # - Net Pension Income = (Monthly Retirement Income (Post-Tax) - ISA Income)
-    # - ISA Income = Future ISA Pot * 0.04 / 12
+    # Split pension income into:
+    # - Pension Tax: Future Pension Pot * 0.75 * 0.04 * 0.2 / 12
+    # - Net Pension Income: (Monthly Retirement Income (Post-Tax) - ISA Income)
+    # - ISA Income: Future ISA Pot * 0.04 / 12
     pension_tax_vals = (df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2 / 12).tolist()
     isa_income_vals = (df["Future ISA Pot (£)"] * 0.04 / 12).tolist()
     net_pension_income_vals = (df["Monthly Retirement Income (Post-Tax) (£)"] - df["Future ISA Pot (£)"] * 0.04 / 12).tolist()
@@ -251,7 +255,7 @@ The dashboard allows you to:
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
-    graph_height = 500  # Same height for both graphs
+    graph_height = 500  # Force both graphs to have the same height
 
     col1, col2 = st.columns(2)
 
@@ -259,42 +263,42 @@ The dashboard allows you to:
         # Graph 1: Stacked Bar Chart for Current Financial Breakdown
         fig1 = go.Figure()
         fig1.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=pension_vals,
             name="Pension Contribution",
             marker_color="#2E8B57",  # deep green
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=tax_ni_vals,
             name="Tax + NI Paid",
             marker_color="#B22222",  # deep red
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=isa_contrib_vals,
             name="ISA Contribution",
             marker_color="#66CDAA",  # medium aquamarine
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=cash_avail_vals,
             name="Cash Available",
             marker_color="#32CD32",  # lime green
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=pension_pot_vals,
             name="Pension Pot",
             marker_color="#1E90FF",  # dodger blue
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=isa_pot_vals,
             name="ISA Pot",
             marker_color="#87CEFA",  # light sky blue
@@ -313,24 +317,24 @@ The dashboard allows you to:
 
     with col2:
         # Graph 2: Stacked Bar Chart for Retirement Income Breakdown
-        # Stacks: Pension Tax, Net Pension Income, and ISA Income.
+        # Stacks: Pension Tax, Net Pension Income, ISA Income.
         fig2 = go.Figure()
         fig2.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=pension_tax_vals,
             name="Pension Tax",
             marker_color="#DC143C",  # crimson
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=net_pension_income_vals,
             name="Net Pension Income",
             marker_color="#228B22",  # forest green
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.add_trace(go.Bar(
-            x=options_list,
+            x=option_labels,
             y=isa_income_vals,
             name="ISA Income",
             marker_color="#FF8C00",  # dark orange
@@ -351,10 +355,10 @@ The dashboard allows you to:
     st.write("### Summary")
     st.write(
         """
-✅ Both graphs now have the same height with legends arranged at the same horizontal line.  
-✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.  
-✅ Graph 2 (stacked): Breaks down retirement income into Pension Tax, Net Pension Income, and ISA Income.  
-✅ This detailed breakdown makes Graph 2 more comparable to Graph 1.
+✅ Both graphs now have the same height with legends arranged on the same horizontal line.
+✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.
+✅ Graph 2 (stacked): Breaks down retirement income into Pension Tax, Net Pension Income, and ISA Income.
+✅ Option labels now include the additional pension contribution value.
 ✅ Automatic recommendation is provided based on balanced cash liquidity and post-tax retirement income.
         """
     )

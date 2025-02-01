@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt  # (kept if needed for any other purpose)
 
 # -------------------------------
 # Helper Functions for Tax & NI Calculations
@@ -37,25 +36,19 @@ def compute_tax(income):
 
 def compute_ni(income):
     """
-    Compute UK National Insurance (NI) on the given income.
-    
-    NI brackets:
+    Compute UK National Insurance (NI) on the given income using the corrected brackets:
       - Below £12,570: 0%
       - £12,570 – £50,270: 10%
       - Above £50,270: 2%
     """
-    ni = 0
     if income <= 12570:
         return 0
-
-    if income > 12570:
-        taxable = min(income, 50270) - 12570
-        ni += taxable * 0.10
-
+    ni = 0
+    # NI for income between 12,570 and 50,270 at 10%
+    ni += (min(income, 50270) - 12570) * 0.10
+    # NI for income above 50,270 at 2%
     if income > 50270:
-        taxable = income - 50270
-        ni += taxable * 0.02
-
+        ni += (income - 50270) * 0.02
     return ni
 
 # -------------------------------
@@ -238,14 +231,13 @@ def main():
     pension_pot_vals = df["Future Pension Pot (£)"].tolist()
     isa_pot_vals = df["Future ISA Pot (£)"].tolist()
 
-    # Graph 2: Retirement Income Breakdown (Grouped bars)
-    # Calculate gross monthly income, tax (from pension), and net (post-tax) monthly income.
-    gross_income = ((df["Future Pension Pot (£)"] * 0.04) + (df["Future ISA Pot (£)"] * 0.04)) / 12
-    tax_on_pension = (df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2) / 12
-    net_income = gross_income - tax_on_pension
-    gross_income_vals = gross_income.tolist()
-    tax_vals = tax_on_pension.tolist()
-    net_income_vals = net_income.tolist()
+    # Graph 2: Retirement Income Breakdown (Stacked)
+    # For Graph 2, we show the stack of:
+    # - Tax (bottom) and
+    # - Post Tax Income (top)
+    # Their sum equals the Gross Monthly Income.
+    tax_vals = ((df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2) / 12).tolist()
+    post_tax_vals = df["Monthly Retirement Income (Post-Tax) (£)"].tolist()  # Already net income
 
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
@@ -259,86 +251,83 @@ def main():
             x=options_list,
             y=pension_vals,
             name="Pension Contribution",
+            marker_color="#2E8B57",  # deep green
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
             x=options_list,
             y=tax_ni_vals,
             name="Tax + NI Paid",
+            marker_color="#B22222",  # deep red
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
             x=options_list,
             y=isa_contrib_vals,
             name="ISA Contribution",
+            marker_color="#66CDAA",  # medium aquamarine
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
             x=options_list,
             y=cash_avail_vals,
             name="Cash Available",
+            marker_color="#32CD32",  # lime green
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
             x=options_list,
             y=pension_pot_vals,
             name="Pension Pot",
+            marker_color="#1E90FF",  # dodger blue
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.add_trace(go.Bar(
             x=options_list,
             y=isa_pot_vals,
             name="ISA Pot",
+            marker_color="#87CEFA",  # light sky blue
             hovertemplate="£%{y:,.2f}"
         ))
         fig1.update_layout(
             barmode='stack',
             title="Current Financial Breakdown",
+            xaxis_title="Options",
+            yaxis_title="Amount (£)",
             legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
             margin=dict(b=100)
         )
         st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
-        # Graph 2: Grouped Bar Chart for Retirement Income Breakdown
+        # Graph 2: Stacked Bar Chart for Retirement Income Breakdown
+        # Two traces: Tax and Post Tax Income (stacked)
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(
-            x=options_list,
-            y=gross_income_vals,
-            name="Gross Monthly Income",
-            hovertemplate="£%{y:,.2f}"
-        ))
         fig2.add_trace(go.Bar(
             x=options_list,
             y=tax_vals,
             name="Tax",
+            marker_color="#B22222",  # deep red
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.add_trace(go.Bar(
             x=options_list,
-            y=net_income_vals,
+            y=post_tax_vals,
             name="Post Tax Income",
+            marker_color="#2E8B57",  # deep green
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.update_layout(
-            barmode='group',
+            barmode='stack',
             title="Retirement Income Breakdown",
+            xaxis_title="Options",
+            yaxis_title="Monthly Income (£)",
             legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
             margin=dict(b=100)
         )
         st.plotly_chart(fig2, use_container_width=True)
 
-    st.markdown("---")
-    st.write("### Summary")
-    st.write(
-        """
-✅ Interactive graphs display detailed amounts on hover  
-✅ Two side-by-side graphs: one for current financial breakdown and one for retirement income breakdown  
-✅ Clear legends placed outside the chart areas  
-✅ Automatic recommendation based on balanced cash liquidity and post-tax retirement income  
-        """
-    )
-    st.write("🚀 Next Steps: Test various input levels, gather user feedback, and iterate further.")
+
 
 if __name__ == '__main__':
     main()

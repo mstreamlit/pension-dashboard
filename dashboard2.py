@@ -74,7 +74,7 @@ def compute_ni(income_after_pension):
 def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
     st.write("taxable income: ")
-    st.write(f"£{taxable_income:,.2f}")
+
     # -------------------------------
     # Sidebar – General Inputs
     # -------------------------------

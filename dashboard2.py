@@ -43,7 +43,7 @@ def compute_ni(income):
     
     NI brackets:
       - Below £12,570: 0%
-      - £12,570 – £50,270: 12%
+      - £12,570 – £50,270: 10%
       - Above £50,270: 2%
     """
     ni = 0
@@ -52,7 +52,7 @@ def compute_ni(income):
 
     if income > 12570:
         taxable = min(income, 50270) - 12570
-        ni += taxable * 0.12
+        ni += taxable * 0.10
 
     if income > 50270:
         taxable = income - 50270
@@ -65,22 +65,9 @@ def compute_ni(income):
 # -------------------------------
 def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
-    st.write("📅 **Date:** January 2025")
-    st.write("👤 **Owner:** [Your Name]")
-    st.write("💼 **Purpose:** Helps users determine the optimal pension and ISA contributions by evaluating tax implications, NI, cash availability, and long‐term retirement income.")
-
+    
     st.markdown("---")
-    st.header("1️⃣ Overview")
-    st.write(
-        """
-The dashboard allows you to:
-- Compare three different pension contribution scenarios.
-- Assess cash available for ISA investments.
-- See the impact of contributions on tax, NI, and net take-home.
-- View projected retirement pots for pension & ISA investments.
-- Get a dynamic recommendation for the best contribution strategy.
-        """
-    )
+
 
     # -------------------------------
     # Sidebar – User Inputs
@@ -242,17 +229,7 @@ The dashboard allows you to:
 
     st.markdown("---")
     st.write("### Summary")
-    st.write(
-        """
-✅ Dynamic tax & NI calculations based on UK rates  
-✅ Cash availability comparison for investments  
-✅ Retirement projections for pension & ISA pots  
-✅ Interactive toggle for income-based vs. one-off calculations  
-✅ Graphical visualization of contributions & savings  
-✅ Automatic recommendation of best strategy  
-        """
-    )
-    st.write("🚀 Next Steps: Run testing with various contribution levels, gather user feedback, and iterate.")
+  
 
 if __name__ == '__main__':
     main()

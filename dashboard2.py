@@ -1,7 +1,8 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import matplotlib.pyplot as plt  # (kept if needed for any other purpose)
 
 # -------------------------------
 # Helper Functions for Tax & NI Calculations
@@ -40,7 +41,7 @@ def compute_ni(income):
     
     NI brackets:
       - Below £12,570: 0%
-      - £12,570 – £50,270: 12%
+      - £12,570 – £50,270: 10%
       - Above £50,270: 2%
     """
     ni = 0
@@ -49,7 +50,7 @@ def compute_ni(income):
 
     if income > 12570:
         taxable = min(income, 50270) - 12570
-        ni += taxable * 0.12
+        ni += taxable * 0.10
 
     if income > 50270:
         taxable = income - 50270
@@ -159,7 +160,6 @@ The dashboard allows you to:
     # -------------------------------
     # Main Calculations for Each Scenario
     # -------------------------------
-    # Also include ISA Contribution as a field for graphing.
     scenarios = {
         "Option 1": {"pension": option1_extra_pension, "isa": option1_isa},
         "Option 2": {"pension": option2_extra_pension, "isa": option2_isa},
@@ -194,7 +194,7 @@ The dashboard allows you to:
 
         # -------------------------------
         # Monthly Retirement Income Calculation (Post-Tax)
-        # Assumption: 4% annual withdrawal rate; first 25% is tax‑free and remaining 75% is taxed (80% received)
+        # Assumption: 4% annual withdrawal rate; 25% of pension pot is tax‑free; 75% is taxable at 20% (80% received)
         # -------------------------------
         monthly_pension_income = ((future_pension_pot * 0.25 * 0.04) +
                                   (future_pension_pot * 0.75 * 0.04 * 0.8)) / 12
@@ -242,68 +242,118 @@ The dashboard allows you to:
     st.subheader(f"🏆 Recommended Option: **{recommended_option}** (Best balance of Cash & Post-Tax Income)")
 
     # -------------------------------
-    # Graph 1: Current Financial Breakdown
+    # Prepare Data for Graphs
     # -------------------------------
-    st.header("3️⃣ Current Financial Breakdown")
-    labels = df["Option"].tolist()
-    x = np.arange(len(labels))
-    width = 0.5
+    options_list = df["Option"].tolist()
+    # Graph 1: Current Financial Breakdown (6 components)
+    pension_vals = df["Total Pension Contribution (£)"].tolist()
+    tax_ni_vals = (df["Tax Paid (£)"] + df["NI Paid (£)"]).tolist()
+    isa_contrib_vals = df["ISA Contribution (£)"].tolist()
+    cash_avail_vals = df["Cash Available (£)"].tolist()
+    pension_pot_vals = df["Future Pension Pot (£)"].tolist()
+    isa_pot_vals = df["Future ISA Pot (£)"].tolist()
 
-    pension = df["Total Pension Contribution (£)"].tolist()
-    tax_ni = (df["Tax Paid (£)"] + df["NI Paid (£)"]).tolist()
-    isa_contrib = df["ISA Contribution (£)"].tolist()
-    cash_avail = df["Cash Available (£)"].tolist()
-
-    fig1, ax1 = plt.subplots(figsize=(10, 6))
-    bottom = np.zeros(len(labels))
-    bar1 = ax1.bar(x, pension, width, label="Pension Contribution")
-    bottom += np.array(pension)
-    bar2 = ax1.bar(x, tax_ni, width, bottom=bottom, label="Tax + NI Paid")
-    bottom += np.array(tax_ni)
-    bar3 = ax1.bar(x, isa_contrib, width, bottom=bottom, label="ISA Contribution")
-    bottom += np.array(isa_contrib)
-    bar4 = ax1.bar(x, cash_avail, width, bottom=bottom, label="Cash Available")
-    ax1.set_ylabel("Amount (£)")
-    ax1.set_title("Current Financial Breakdown")
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(labels)
-    ax1.legend(loc="upper left")
-    st.pyplot(fig1)
+    # Graph 2: Retirement Income Breakdown (Grouped bars)
+    # Calculate gross monthly income, tax (from pension), and net (post-tax) monthly income.
+    gross_income = ((df["Future Pension Pot (£)"] * 0.04) + (df["Future ISA Pot (£)"] * 0.04)) / 12
+    tax_on_pension = (df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2) / 12
+    net_income = gross_income - tax_on_pension
+    gross_income_vals = gross_income.tolist()
+    tax_vals = tax_on_pension.tolist()
+    net_income_vals = net_income.tolist()
 
     # -------------------------------
-    # Graph 2: Retirement Projection Breakdown
+    # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
-    st.header("4️⃣ Retirement Projection Breakdown")
-    # For annual income, we multiply monthly retirement income by 12.
-    pension_pot = df["Future Pension Pot (£)"].tolist()
-    isa_pot = df["Future ISA Pot (£)"].tolist()
-    annual_income = (df["Monthly Retirement Income (Post-Tax) (£)"] * 12).tolist()
+    col1, col2 = st.columns(2)
 
-    fig2, ax2 = plt.subplots(figsize=(10, 6))
-    bottom = np.zeros(len(labels))
-    bar1 = ax2.bar(x, pension_pot, width, label="Pension Pot")
-    bottom += np.array(pension_pot)
-    bar2 = ax2.bar(x, isa_pot, width, bottom=bottom, label="ISA Pot")
-    bottom += np.array(isa_pot)
-    bar3 = ax2.bar(x, annual_income, width, bottom=bottom, label="Annual Income (Post-Tax)")
-    ax2.set_ylabel("Amount (£)")
-    ax2.set_title("Retirement Projection Breakdown")
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(labels)
-    ax2.legend(loc="upper left")
-    st.pyplot(fig2)
+    with col1:
+        # Graph 1: Stacked Bar Chart for Current Financial Breakdown
+        fig1 = go.Figure()
+        fig1.add_trace(go.Bar(
+            x=options_list,
+            y=pension_vals,
+            name="Pension Contribution",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig1.add_trace(go.Bar(
+            x=options_list,
+            y=tax_ni_vals,
+            name="Tax + NI Paid",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig1.add_trace(go.Bar(
+            x=options_list,
+            y=isa_contrib_vals,
+            name="ISA Contribution",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig1.add_trace(go.Bar(
+            x=options_list,
+            y=cash_avail_vals,
+            name="Cash Available",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig1.add_trace(go.Bar(
+            x=options_list,
+            y=pension_pot_vals,
+            name="Pension Pot",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig1.add_trace(go.Bar(
+            x=options_list,
+            y=isa_pot_vals,
+            name="ISA Pot",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig1.update_layout(
+            barmode='stack',
+            title="Current Financial Breakdown",
+            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+            margin=dict(b=100)
+        )
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col2:
+        # Graph 2: Grouped Bar Chart for Retirement Income Breakdown
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(
+            x=options_list,
+            y=gross_income_vals,
+            name="Gross Monthly Income",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig2.add_trace(go.Bar(
+            x=options_list,
+            y=tax_vals,
+            name="Tax",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig2.add_trace(go.Bar(
+            x=options_list,
+            y=net_income_vals,
+            name="Post Tax Income",
+            hovertemplate="£%{y:,.2f}"
+        ))
+        fig2.update_layout(
+            barmode='group',
+            title="Retirement Income Breakdown",
+            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+            margin=dict(b=100)
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
     st.markdown("---")
     st.write("### Summary")
     st.write(
         """
-✅ Dynamic tax & NI calculations based on UK rates  
-✅ Separate, real-time cash available calculations for each scenario displayed in the sidebar  
-✅ Two separate graphs: one for current contributions & liquidity and another for retirement projections  
+✅ Interactive graphs display detailed amounts on hover  
+✅ Two side-by-side graphs: one for current financial breakdown and one for retirement income breakdown  
+✅ Clear legends placed outside the chart areas  
 ✅ Automatic recommendation based on balanced cash liquidity and post-tax retirement income  
         """
     )
-    st.write("🚀 Next Steps: Run testing with various contribution levels, gather user feedback, and iterate.")
+    st.write("🚀 Next Steps: Test various input levels, gather user feedback, and iterate further.")
 
 if __name__ == '__main__':
     main()

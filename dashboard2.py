@@ -259,7 +259,7 @@ The dashboard allows you to:
     # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
     graph_height = 500  # Force both graphs to have the same height
-    common_margin = dict(l=50, r=50, t=50, b=100)  # increased bottom margin to avoid legend overlap
+    common_margin = dict(l=50, r=50, t=50, b=150)  # increased bottom margin to prevent legend overlap
 
     col1, col2 = st.columns(2)
 
@@ -313,7 +313,8 @@ The dashboard allows you to:
             title="Current Financial Breakdown",
             xaxis_title="Options",
             yaxis_title="Amount (£)",
-            legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+            xaxis=dict(tickangle=0),
+            legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center"),
             margin=common_margin,
             height=graph_height
         )
@@ -348,7 +349,8 @@ The dashboard allows you to:
             title="Retirement Income Breakdown",
             xaxis_title="Options",
             yaxis_title="Monthly Income (£)",
-            legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+            xaxis=dict(tickangle=0),
+            legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center"),
             margin=common_margin,
             height=graph_height
         )
@@ -358,7 +360,7 @@ The dashboard allows you to:
     st.write("### Summary")
     st.write(
         """
-✅ Both graphs now have consistent height and margins so that the legends do not overlap the plots.
+✅ Both graphs now have the same height and margins so that the legends are positioned below the plots without overlapping.
 ✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.
 ✅ Graph 2 (stacked): Breaks down retirement income into Pension Tax, Net Pension Income, and ISA Income.
 ✅ Option labels now include the additional pension contribution value.

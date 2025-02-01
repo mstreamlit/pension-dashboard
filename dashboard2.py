@@ -19,19 +19,18 @@ def compute_tax(income):
     tax = 0
     if income <= 12570:
         return 0
-
+    # 20% band
     if income > 12570:
         taxable = min(income, 50270) - 12570
         tax += taxable * 0.20
-
+    # 40% band
     if income > 50270:
         taxable = min(income, 125140) - 50270
         tax += taxable * 0.40
-
+    # 45% band
     if income > 125140:
         taxable = income - 125140
         tax += taxable * 0.45
-
     return tax
 
 def compute_ni(income):
@@ -44,9 +43,9 @@ def compute_ni(income):
     if income <= 12570:
         return 0
     ni = 0
-    # NI for income between 12,570 and 50,270 at 10%
+    # Income between 12,570 and 50,270 at 10%
     ni += (min(income, 50270) - 12570) * 0.10
-    # NI for income above 50,270 at 2%
+    # Income above 50,270 at 2%
     if income > 50270:
         ni += (income - 50270) * 0.02
     return ni
@@ -56,7 +55,22 @@ def compute_ni(income):
 # -------------------------------
 def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
+    st.write("📅 **Date:** January 2025")
+    st.write("👤 **Owner:** [Your Name]")
+    st.write("💼 **Purpose:** Helps users determine the optimal pension and ISA contributions by evaluating tax implications, NI, cash availability, and long‐term retirement income.")
 
+    st.markdown("---")
+    st.header("1️⃣ Overview")
+    st.write(
+        """
+The dashboard allows you to:
+- Compare three different pension contribution scenarios.
+- Assess cash available for ISA investments.
+- See the impact of contributions on tax, NI, and net take-home.
+- View projected retirement pots for pension & ISA investments.
+- Get a dynamic recommendation for the best contribution strategy.
+        """
+    )
 
     # -------------------------------
     # Sidebar – General Inputs
@@ -231,17 +245,20 @@ def main():
     pension_pot_vals = df["Future Pension Pot (£)"].tolist()
     isa_pot_vals = df["Future ISA Pot (£)"].tolist()
 
-    # Graph 2: Retirement Income Breakdown (Stacked)
-    # For Graph 2, we show the stack of:
-    # - Tax (bottom) and
-    # - Post Tax Income (top)
-    # Their sum equals the Gross Monthly Income.
+    # Graph 2: Retirement Income Breakdown (Grouped Bars)
+    # Calculate Gross Monthly Income as the total withdrawal before tax:
+    gross_income = (((df["Future Pension Pot (£)"] * 0.04) + (df["Future ISA Pot (£)"] * 0.04)) / 12).tolist()
+    # Tax from pension portion (as before)
     tax_vals = ((df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2) / 12).tolist()
-    post_tax_vals = df["Monthly Retirement Income (Post-Tax) (£)"].tolist()  # Already net income
+    # Post Tax Income (net), already computed
+    post_tax_vals = df["Monthly Retirement Income (Post-Tax) (£)"].tolist()
 
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
+    # Set same height for both graphs
+    graph_height = 500
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -294,15 +311,22 @@ def main():
             title="Current Financial Breakdown",
             xaxis_title="Options",
             yaxis_title="Amount (£)",
-            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-            margin=dict(b=100)
+            legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
+            margin=dict(b=100),
+            height=graph_height
         )
         st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
-        # Graph 2: Stacked Bar Chart for Retirement Income Breakdown
-        # Two traces: Tax and Post Tax Income (stacked)
+        # Graph 2: Grouped Bar Chart for Retirement Income Breakdown
         fig2 = go.Figure()
+        fig2.add_trace(go.Bar(
+            x=options_list,
+            y=gross_income,
+            name="Gross Monthly Income",
+            marker_color="#4682B4",  # steel blue
+            hovertemplate="£%{y:,.2f}"
+        ))
         fig2.add_trace(go.Bar(
             x=options_list,
             y=tax_vals,
@@ -318,16 +342,28 @@ def main():
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.update_layout(
-            barmode='stack',
+            barmode='group',
             title="Retirement Income Breakdown",
             xaxis_title="Options",
             yaxis_title="Monthly Income (£)",
-            legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-            margin=dict(b=100)
+            legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
+            margin=dict(b=100),
+            height=graph_height
         )
         st.plotly_chart(fig2, use_container_width=True)
 
-
+    st.markdown("---")
+    st.write("### Summary")
+    st.write(
+        """
+✅ Interactive graphs display detailed amounts on hover  
+✅ Two side-by-side graphs with identical height and legends arranged at the same horizontal line  
+✅ Graph 1 (stacked): Shows current contributions & liquidity including Pension Contribution, Tax+NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot  
+✅ Graph 2 (grouped): Shows Gross Monthly Income, Tax, and Post Tax Income (so you can clearly see the pre-tax income)
+✅ Automatic recommendation based on balanced cash liquidity and post-tax retirement income  
+        """
+    )
+    st.write("🚀 Next Steps: Test various input levels, gather user feedback, and iterate further.")
 
 if __name__ == '__main__':
     main()

@@ -43,9 +43,9 @@ def compute_ni(income):
     if income <= 12570:
         return 0
     ni = 0
-    # Income between 12,570 and 50,270 at 10%
+    # NI for income between 12,570 and 50,270 at 10%
     ni += (min(income, 50270) - 12570) * 0.10
-    # Income above 50,270 at 2%
+    # NI for income above 50,270 at 2%
     if income > 50270:
         ni += (income - 50270) * 0.02
     return ni
@@ -245,19 +245,15 @@ The dashboard allows you to:
     pension_pot_vals = df["Future Pension Pot (£)"].tolist()
     isa_pot_vals = df["Future ISA Pot (£)"].tolist()
 
-    # Graph 2: Retirement Income Breakdown (Grouped Bars)
-    # Calculate Gross Monthly Income as the total withdrawal before tax:
-    gross_income = (((df["Future Pension Pot (£)"] * 0.04) + (df["Future ISA Pot (£)"] * 0.04)) / 12).tolist()
-    # Tax from pension portion (as before)
+    # Graph 2: Retirement Income Breakdown (Stacked)
+    # Breakdown: Tax and Post Tax Income such that their sum equals Gross Monthly Income.
     tax_vals = ((df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2) / 12).tolist()
-    # Post Tax Income (net), already computed
     post_tax_vals = df["Monthly Retirement Income (Post-Tax) (£)"].tolist()
 
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
-    # Set same height for both graphs
-    graph_height = 500
+    graph_height = 500  # Force both graphs to have the same height
 
     col1, col2 = st.columns(2)
 
@@ -311,43 +307,37 @@ The dashboard allows you to:
             title="Current Financial Breakdown",
             xaxis_title="Options",
             yaxis_title="Amount (£)",
-            legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
-            margin=dict(b=100),
+            legend=dict(orientation="h", y=-0.1, x=0.5, xanchor="center"),
+            margin=dict(b=50),
             height=graph_height
         )
         st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
-        # Graph 2: Grouped Bar Chart for Retirement Income Breakdown
+        # Graph 2: Stacked Bar Chart for Retirement Income Breakdown
+        # Two traces: Tax and Post Tax Income (stacked)
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(
-            x=options_list,
-            y=gross_income,
-            name="Gross Monthly Income",
-            marker_color="#4682B4",  # steel blue
-            hovertemplate="£%{y:,.2f}"
-        ))
         fig2.add_trace(go.Bar(
             x=options_list,
             y=tax_vals,
             name="Tax",
-            marker_color="#B22222",  # deep red
+            marker_color="#DC143C",  # crimson
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.add_trace(go.Bar(
             x=options_list,
             y=post_tax_vals,
             name="Post Tax Income",
-            marker_color="#2E8B57",  # deep green
+            marker_color="#228B22",  # forest green
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.update_layout(
-            barmode='group',
+            barmode='stack',
             title="Retirement Income Breakdown",
             xaxis_title="Options",
             yaxis_title="Monthly Income (£)",
-            legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
-            margin=dict(b=100),
+            legend=dict(orientation="h", y=-0.1, x=0.5, xanchor="center"),
+            margin=dict(b=50),
             height=graph_height
         )
         st.plotly_chart(fig2, use_container_width=True)
@@ -356,11 +346,11 @@ The dashboard allows you to:
     st.write("### Summary")
     st.write(
         """
-✅ Interactive graphs display detailed amounts on hover  
-✅ Two side-by-side graphs with identical height and legends arranged at the same horizontal line  
-✅ Graph 1 (stacked): Shows current contributions & liquidity including Pension Contribution, Tax+NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot  
-✅ Graph 2 (grouped): Shows Gross Monthly Income, Tax, and Post Tax Income (so you can clearly see the pre-tax income)
-✅ Automatic recommendation based on balanced cash liquidity and post-tax retirement income  
+✅ Both graphs now have the same height with legends arranged on the same horizontal line.  
+✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.  
+✅ Graph 2 (stacked): Displays the breakdown of retirement income into Tax and Post Tax Income (their sum equals the gross monthly income).  
+✅ Colors have been updated for a more appealing UI.
+✅ Automatic recommendation is provided based on balanced cash liquidity and post-tax retirement income.
         """
     )
     st.write("🚀 Next Steps: Test various input levels, gather user feedback, and iterate further.")

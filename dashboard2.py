@@ -40,7 +40,7 @@ def compute_ni(income):
     
     NI brackets:
       - Below £12,570: 0%
-      - £12,570 – £50,270: 10%
+      - £12,570 – £50,270: 12%
       - Above £50,270: 2%
     """
     ni = 0
@@ -49,7 +49,7 @@ def compute_ni(income):
 
     if income > 12570:
         taxable = min(income, 50270) - 12570
-        ni += taxable * 0.10
+        ni += taxable * 0.12
 
     if income > 50270:
         taxable = income - 50270
@@ -160,6 +160,7 @@ The dashboard allows you to:
     # -------------------------------
     # Main Calculations for Each Scenario
     # -------------------------------
+    # We also include the ISA Contribution as a field for the graph.
     scenarios = {
         "Option 1": {"pension": option1_extra_pension, "isa": option1_isa},
         "Option 2": {"pension": option2_extra_pension, "isa": option2_isa},
@@ -208,6 +209,7 @@ The dashboard allows you to:
             "Total Pension Contribution (£)": total_pension_contrib,
             "Tax Paid (£)": tax_paid,
             "NI Paid (£)": ni_paid,
+            "ISA Contribution (£)": isa_contrib,
             "Cash Available (£)": cash_available,
             "Future Pension Pot (£)": future_pension_pot,
             "Future ISA Pot (£)": future_isa_pot,
@@ -249,21 +251,40 @@ The dashboard allows you to:
     # -------------------------------
     st.header("3️⃣ Stacked Bar Graph Comparing Scenarios")
     labels = df["Option"].tolist()
-    pension_values = df["Total Pension Contribution (£)"].tolist()
-    tax_values = df["Tax Paid (£)"].tolist()
-    ni_values = df["NI Paid (£)"].tolist()
-    cash_values_list = df["Cash Available (£)"].tolist()
-
     x = np.arange(len(labels))
     width = 0.5
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    bar1 = ax.bar(x, pension_values, width, label="Pension Contribution")
-    bar2 = ax.bar(x, tax_values, width, bottom=pension_values, label="Tax Paid")
-    bottom_stack = np.array(pension_values) + np.array(tax_values)
-    bar3 = ax.bar(x, ni_values, width, bottom=bottom_stack, label="NI Paid")
-    bottom_stack += np.array(ni_values)
-    bar4 = ax.bar(x, cash_values_list, width, bottom=bottom_stack, label="Cash Available")
+    # Retrieve each component from the DataFrame
+    pension = df["Total Pension Contribution (£)"]
+    tax_ni = df["Tax Paid (£)"] + df["NI Paid (£)"]
+    isa_contrib = df["ISA Contribution (£)"]
+    cash_avail = df["Cash Available (£)"]
+    pension_pot = df["Future Pension Pot (£)"]
+    isa_pot = df["Future ISA Pot (£)"]
+    monthly_income = df["Monthly Retirement Income (Post-Tax) (£)"]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    bottom = np.zeros(len(labels))
+
+    bar1 = ax.bar(x, pension, width, label="Pension Contribution")
+    bottom += pension
+
+    bar2 = ax.bar(x, tax_ni, width, bottom=bottom, label="Tax + NI Paid")
+    bottom += tax_ni
+
+    bar3 = ax.bar(x, isa_contrib, width, bottom=bottom, label="ISA Contribution")
+    bottom += isa_contrib
+
+    bar4 = ax.bar(x, cash_avail, width, bottom=bottom, label="Cash Available")
+    bottom += cash_avail
+
+    bar5 = ax.bar(x, pension_pot, width, bottom=bottom, label="Pension Pot")
+    bottom += pension_pot
+
+    bar6 = ax.bar(x, isa_pot, width, bottom=bottom, label="ISA Pot")
+    bottom += isa_pot
+
+    bar7 = ax.bar(x, monthly_income, width, bottom=bottom, label="Monthly Income (Post-Tax)")
 
     ax.set_ylabel("Amount (£)")
     ax.set_title("Breakdown of Each Contribution Option")

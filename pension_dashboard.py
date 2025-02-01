@@ -99,3 +99,32 @@ st.subheader("🏆 Recommended Option")
 best_option = max([scenario_1, scenario_2, scenario_3], key=lambda x: x["Cash Available"])
 st.success(f"Based on cash available, **Option {['1', '2', '3'][[scenario_1, scenario_2, scenario_3].index(best_option)]} is recommended.**")
 
+# --- STACKED BAR CHART ---
+st.subheader("📊 Stacked Bar Graph Comparing All Three Pension & ISA Scenarios")
+
+options = ["Option 1", "Option 2", "Option 3"]
+pension_contributions = np.array([scenario_1["Pension Contribution"], scenario_2["Pension Contribution"], scenario_3["Pension Contribution"]])
+tax_paid = np.array([scenario_1["Tax Paid"], scenario_2["Tax Paid"], scenario_3["Tax Paid"]])
+ni_paid = np.array([scenario_1["NI Paid"], scenario_2["NI Paid"], scenario_3["NI Paid"]])
+cash_available = np.array([scenario_1["Cash Available"], scenario_2["Cash Available"], scenario_3["Cash Available"]])
+
+# Adjust bar width and figure size
+bar_width = 0.4
+fig, ax = plt.subplots(figsize=(10, 5))
+
+# Create stacked bars
+ax.bar(options, pension_contributions, width=bar_width, label="Pension Contribution")
+ax.bar(options, tax_paid, width=bar_width, bottom=pension_contributions, label="Tax Paid")
+ax.bar(options, ni_paid, width=bar_width, bottom=pension_contributions + tax_paid, label="NI Paid")
+ax.bar(options, cash_available, width=bar_width, bottom=pension_contributions + tax_paid + ni_paid, label="Cash Available")
+
+# Add labels and adjust legend
+ax.set_ylabel("Value (£)")
+ax.set_title("Stacked Bar Graph Comparing Pension & ISA Scenarios")
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=3)  # Move legend below graph
+plt.tight_layout()
+
+# Display the updated graph
+st.pyplot(fig)
+
+

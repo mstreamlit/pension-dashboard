@@ -193,6 +193,12 @@ The dashboard allows you to:
         monthly_isa_income = (future_isa_pot * 0.04) / 12
         total_monthly_income = monthly_pension_income + monthly_isa_income
 
+        # -------------------------------
+        # Gross Monthly Income (Before Tax Deductions)
+        # For pension, gross = future_pension_pot * 0.04/12; for ISA, it's tax-free.
+        # -------------------------------
+        gross_monthly_income = ((future_pension_pot * 0.04) + (future_isa_pot * 0.04)) / 12
+
         results.append({
             "Option": option,
             "Total Pension Contribution (£)": total_pension_contrib,
@@ -202,7 +208,8 @@ The dashboard allows you to:
             "Cash Available (£)": cash_available,
             "Future Pension Pot (£)": future_pension_pot,
             "Future ISA Pot (£)": future_isa_pot,
-            "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income
+            "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income,
+            "Gross Monthly Income (£)": gross_monthly_income
         })
 
     df = pd.DataFrame(results)
@@ -246,9 +253,10 @@ The dashboard allows you to:
     isa_pot_vals = df["Future ISA Pot (£)"].tolist()
 
     # Graph 2: Retirement Income Breakdown (Stacked)
-    # Breakdown: Tax and Post Tax Income such that their sum equals Gross Monthly Income.
+    # Compute tax (only on pension) and use the net (post-tax) income.
     tax_vals = ((df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2) / 12).tolist()
     post_tax_vals = df["Monthly Retirement Income (Post-Tax) (£)"].tolist()
+    gross_income_vals = df["Gross Monthly Income (£)"].tolist()
 
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
@@ -315,7 +323,7 @@ The dashboard allows you to:
 
     with col2:
         # Graph 2: Stacked Bar Chart for Retirement Income Breakdown
-        # Two traces: Tax and Post Tax Income (stacked)
+        # Two stacked traces: Tax and Post Tax Income, plus a scatter trace for Gross Income.
         fig2 = go.Figure()
         fig2.add_trace(go.Bar(
             x=options_list,
@@ -329,6 +337,17 @@ The dashboard allows you to:
             y=post_tax_vals,
             name="Post Tax Income",
             marker_color="#228B22",  # forest green
+            hovertemplate="£%{y:,.2f}"
+        ))
+        # Add a scatter trace for Gross Income markers
+        fig2.add_trace(go.Scatter(
+            x=options_list,
+            y=gross_income_vals,
+            mode='markers+text',
+            name="Gross Income",
+            marker=dict(color="#000000", size=10),
+            text=[f"£{val:,.2f}" for val in gross_income_vals],
+            textposition="top center",
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.update_layout(
@@ -346,9 +365,9 @@ The dashboard allows you to:
     st.write("### Summary")
     st.write(
         """
-✅ Both graphs now have the same height with legends arranged on the same horizontal line.  
-✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.  
-✅ Graph 2 (stacked): Displays the breakdown of retirement income into Tax and Post Tax Income (their sum equals the gross monthly income).  
+✅ Both graphs now have the same height with legends arranged at the same horizontal line.  
+✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax+NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.  
+✅ Graph 2 (stacked): Displays retirement income breakdown – the stacked bar shows Tax and Post Tax Income (whose sum equals the Gross Income), with Gross Income indicated by markers.  
 ✅ Colors have been updated for a more appealing UI.
 ✅ Automatic recommendation is provided based on balanced cash liquidity and post-tax retirement income.
         """

@@ -222,44 +222,44 @@ df_styled = df.style.format({col: "{:,.2f}" for col in numeric_cols})
 # Display the styled DataFrame
 st.dataframe(df_styled)
 
-    # Recommended Option: the one with the highest available cash.
-    recommended_option = df.loc[df["Cash Available (£)"].idxmax(), "Option"]
-    st.subheader(f"🏆 Recommended Option: **{recommended_option}** (Highest Cash Available)")
+# Recommended Option: the one with the highest available cash.
+recommended_option = df.loc[df["Cash Available (£)"].idxmax(), "Option"]
+st.subheader(f"🏆 Recommended Option: **{recommended_option}** (Highest Cash Available)")
 
-    # -------------------------------
-    # Stacked Bar Chart Visualization
-    # -------------------------------
-    st.header("3️⃣ Stacked Bar Graph Comparing Scenarios")
-    labels = df["Option"].tolist()
-    pension_values = df["Total Pension Contribution (£)"].tolist()
-    tax_values = df["Tax Paid (£)"].tolist()
-    ni_values = df["NI Paid (£)"].tolist()
-    cash_values = df["Cash Available (£)"].tolist()
+# -------------------------------
+# Stacked Bar Chart Visualization
+# -------------------------------
+st.header("3️⃣ Stacked Bar Graph Comparing Scenarios")
+labels = df["Option"].tolist()
+pension_values = df["Total Pension Contribution (£)"].tolist()
+tax_values = df["Tax Paid (£)"].tolist()
+ni_values = df["NI Paid (£)"].tolist()
+cash_values = df["Cash Available (£)"].tolist()
 
-    x = np.arange(len(labels))
-    width = 0.5
+x = np.arange(len(labels))
+width = 0.5
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    
-    # Plot each stack component.
-    bar1 = ax.bar(x, pension_values, width, label="Pension Contribution")
-    bar2 = ax.bar(x, tax_values, width, bottom=pension_values, label="Tax Paid")
-    bottom_stack = np.array(pension_values) + np.array(tax_values)
-    bar3 = ax.bar(x, ni_values, width, bottom=bottom_stack, label="NI Paid")
-    bottom_stack += np.array(ni_values)
-    bar4 = ax.bar(x, cash_values, width, bottom=bottom_stack, label="Cash Available")
+fig, ax = plt.subplots(figsize=(8, 6))
 
-    ax.set_ylabel("Amount (£)")
-    ax.set_title("Breakdown of Each Contribution Option")
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.3), ncol=2)
+# Plot each stack component.
+bar1 = ax.bar(x, pension_values, width, label="Pension Contribution")
+bar2 = ax.bar(x, tax_values, width, bottom=pension_values, label="Tax Paid")
+bottom_stack = np.array(pension_values) + np.array(tax_values)
+bar3 = ax.bar(x, ni_values, width, bottom=bottom_stack, label="NI Paid")
+bottom_stack += np.array(ni_values)
+bar4 = ax.bar(x, cash_values, width, bottom=bottom_stack, label="Cash Available")
 
-    st.pyplot(fig)
+ax.set_ylabel("Amount (£)")
+ax.set_title("Breakdown of Each Contribution Option")
+ax.set_xticks(x)
+ax.set_xticklabels(labels)
+ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.3), ncol=2)
 
-    st.markdown("---")
-    st.write("### Summary")
-    st.write(
+st.pyplot(fig)
+
+st.markdown("---")
+st.write("### Summary")
+st.write(
         """
 ✅ Dynamic tax & NI calculations based on UK rates  
 ✅ Cash availability comparison for investments  

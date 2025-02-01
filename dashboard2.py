@@ -207,10 +207,20 @@ The dashboard allows you to:
     # Convert results to a DataFrame for display.
     df = pd.DataFrame(results)
 
+    
+
     st.markdown("---")
     st.header("2️⃣ Results Displayed")
     st.subheader("Breakdown of Each Contribution Option")
-    st.dataframe(df.style.format("{:,.2f}"))
+ 
+# Identify the numeric columns in the DataFrame
+numeric_cols = df.select_dtypes(include=['number']).columns
+
+# Apply the format only to the numeric columns
+df_styled = df.style.format({col: "{:,.2f}" for col in numeric_cols})
+
+# Display the styled DataFrame
+st.dataframe(df_styled)
 
     # Recommended Option: the one with the highest available cash.
     recommended_option = df.loc[df["Cash Available (£)"].idxmax(), "Option"]

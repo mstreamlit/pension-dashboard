@@ -63,22 +63,7 @@ def compute_ni(income):
 # -------------------------------
 def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
-    st.write("📅 **Date:** January 2025")
-    st.write("👤 **Owner:** [Your Name]")
-    st.write("💼 **Purpose:** Helps users determine the optimal pension and ISA contributions by evaluating tax implications, NI, cash availability, and long‐term retirement income.")
 
-    st.markdown("---")
-    st.header("1️⃣ Overview")
-    st.write(
-        """
-The dashboard allows you to:
-- Compare three different pension contribution scenarios.
-- Assess cash available for ISA investments.
-- See the impact of contributions on tax, NI, and net take-home.
-- View projected retirement pots for pension & ISA investments.
-- Get a dynamic recommendation for the best contribution strategy.
-        """
-    )
 
     # -------------------------------
     # Sidebar – General Inputs

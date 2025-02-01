@@ -230,10 +230,11 @@ The dashboard allows you to:
     # -------------------------------
     # Prepare Data for Graphs
     # -------------------------------
-    # Create new x-axis labels that show: "Option #: <additional pension contribution>"
-    # Note: additional pension = Total Pension Contribution - annual_pension.
-    option_labels = [f"{row['Option']}: {row['Total Pension Contribution (£)'] - annual_pension:,.0f}" 
-                     for idx, row in df.iterrows()]
+    # Create new x-axis labels: "Option #: <additional pension contribution>"
+    option_labels = [
+        f"{row['Option']}: {row['Total Pension Contribution (£)'] - annual_pension:,.0f}"
+        for idx, row in df.iterrows()
+    ]
 
     # Graph 1: Current Financial Breakdown (6 components)
     pension_vals = df["Total Pension Contribution (£)"].tolist()
@@ -245,17 +246,20 @@ The dashboard allows you to:
 
     # Graph 2: Retirement Income Breakdown (Stacked)
     # Split pension income into:
-    # - Pension Tax: Future Pension Pot * 0.75 * 0.04 * 0.2 / 12
-    # - Net Pension Income: (Monthly Retirement Income (Post-Tax) - ISA Income)
-    # - ISA Income: Future ISA Pot * 0.04 / 12
+    # - Pension Tax = Future Pension Pot * 0.75 * 0.04 * 0.2 / 12
+    # - Net Pension Income = (Monthly Retirement Income (Post-Tax) - ISA Income)
+    # - ISA Income = Future ISA Pot * 0.04 / 12
     pension_tax_vals = (df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2 / 12).tolist()
     isa_income_vals = (df["Future ISA Pot (£)"] * 0.04 / 12).tolist()
-    net_pension_income_vals = (df["Monthly Retirement Income (Post-Tax) (£)"] - df["Future ISA Pot (£)"] * 0.04 / 12).tolist()
+    net_pension_income_vals = (
+        df["Monthly Retirement Income (Post-Tax) (£)"] - df["Future ISA Pot (£)"] * 0.04 / 12
+    ).tolist()
 
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
     graph_height = 500  # Force both graphs to have the same height
+    common_margin = dict(l=50, r=50, t=50, b=100)  # increased bottom margin to avoid legend overlap
 
     col1, col2 = st.columns(2)
 
@@ -309,15 +313,14 @@ The dashboard allows you to:
             title="Current Financial Breakdown",
             xaxis_title="Options",
             yaxis_title="Amount (£)",
-            legend=dict(orientation="h", y=-0.1, x=0.5, xanchor="center"),
-            margin=dict(b=50),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+            margin=common_margin,
             height=graph_height
         )
         st.plotly_chart(fig1, use_container_width=True)
 
     with col2:
         # Graph 2: Stacked Bar Chart for Retirement Income Breakdown
-        # Stacks: Pension Tax, Net Pension Income, ISA Income.
         fig2 = go.Figure()
         fig2.add_trace(go.Bar(
             x=option_labels,
@@ -345,8 +348,8 @@ The dashboard allows you to:
             title="Retirement Income Breakdown",
             xaxis_title="Options",
             yaxis_title="Monthly Income (£)",
-            legend=dict(orientation="h", y=-0.1, x=0.5, xanchor="center"),
-            margin=dict(b=50),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+            margin=common_margin,
             height=graph_height
         )
         st.plotly_chart(fig2, use_container_width=True)
@@ -355,7 +358,7 @@ The dashboard allows you to:
     st.write("### Summary")
     st.write(
         """
-✅ Both graphs now have the same height with legends arranged on the same horizontal line.
+✅ Both graphs now have consistent height and margins so that the legends do not overlap the plots.
 ✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.
 ✅ Graph 2 (stacked): Breaks down retirement income into Pension Tax, Net Pension Income, and ISA Income.
 ✅ Option labels now include the additional pension contribution value.

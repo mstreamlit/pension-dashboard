@@ -230,9 +230,9 @@ The dashboard allows you to:
     # -------------------------------
     # Prepare Data for Graphs
     # -------------------------------
-    # Create new x-axis labels: "Option #: <additional pension contribution>"
+    # Create new x-axis labels in two rows: "Option X" on the first row and "<additional>" on the second.
     option_labels = [
-        f"{row['Option']}: {row['Total Pension Contribution (£)'] - annual_pension:,.0f}"
+        f"{row['Option']}<br>{row['Total Pension Contribution (£)'] - annual_pension:,.0f}"
         for idx, row in df.iterrows()
     ]
 
@@ -258,10 +258,11 @@ The dashboard allows you to:
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
-    graph_height = 500  # Force both graphs to have the same height
-    common_margin = dict(l=50, r=50, t=50, b=150)  # increased bottom margin to prevent legend overlap
+    graph_height = 500  # Same height for both graphs
+    common_margin = dict(l=50, r=50, t=50, b=150)  # Increased bottom margin
 
-    col1, col2 = st.columns(2)
+    # Create three columns: left graph, gap, right graph (to increase spacing)
+    col1, col_gap, col2 = st.columns([1, 0.1, 1])
 
     with col1:
         # Graph 1: Stacked Bar Chart for Current Financial Breakdown
@@ -316,7 +317,8 @@ The dashboard allows you to:
             xaxis=dict(tickangle=0),
             legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center"),
             margin=common_margin,
-            height=graph_height
+            height=graph_height,
+            width=800
         )
         st.plotly_chart(fig1, use_container_width=True)
 
@@ -352,7 +354,8 @@ The dashboard allows you to:
             xaxis=dict(tickangle=0),
             legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center"),
             margin=common_margin,
-            height=graph_height
+            height=graph_height,
+            width=800
         )
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -360,10 +363,10 @@ The dashboard allows you to:
     st.write("### Summary")
     st.write(
         """
-✅ Both graphs now have the same height and margins so that the legends are positioned below the plots without overlapping.
+✅ Both graphs now have the same height, width, and margins so that legends and x-axis labels do not overlap.
+✅ X-axis labels are split into two rows (Option on the first row and additional pension contribution on the second).
 ✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.
 ✅ Graph 2 (stacked): Breaks down retirement income into Pension Tax, Net Pension Income, and ISA Income.
-✅ Option labels now include the additional pension contribution value.
 ✅ Automatic recommendation is provided based on balanced cash liquidity and post-tax retirement income.
         """
     )

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # -------------------------------
 def compute_tax(income):
     """
-    Compute UK Income Tax based on the given taxable income.
+    Compute UK Income Tax based on taxable income.
     
     Tax brackets:
       - £0 – £12,570: 0%
@@ -20,17 +20,14 @@ def compute_tax(income):
     if income <= 12570:
         return 0
 
-    # 20% tax for income between 12,570 and 50,270
     if income > 12570:
         taxable = min(income, 50270) - 12570
         tax += taxable * 0.20
 
-    # 40% tax for income between 50,270 and 125,140
     if income > 50270:
         taxable = min(income, 125140) - 50270
         tax += taxable * 0.40
 
-    # 45% tax for income above 125,140
     if income > 125140:
         taxable = income - 125140
         tax += taxable * 0.45
@@ -67,7 +64,7 @@ def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
     
     st.markdown("---")
-
+    
 
     # -------------------------------
     # Sidebar – User Inputs
@@ -107,6 +104,26 @@ def main():
         )
     )
 
+    # 1. Sidebar Cash Available Calculation
+    # Cash Available = (Income based on toggle) - (Tax + NI) - Pension Contribution
+    if calc_method == "Total Income Calculation (Annual + One-Off)":
+        income_based_sidebar = annual_salary + one_off_income
+    else:
+        income_based_sidebar = one_off_income
+
+    taxable_sidebar = max(income_based_sidebar - annual_pension, 0)
+    tax_sidebar = compute_tax(taxable_sidebar)
+    ni_sidebar = compute_ni(taxable_sidebar)
+    cash_available_sidebar = income_based_sidebar - annual_pension - (tax_sidebar + ni_sidebar)
+    st.sidebar.markdown("#### Calculated Cash Available (before extra contributions)")
+    st.sidebar.write(f"**£{cash_available_sidebar:,.2f}**")
+
+    # Determine income based on toggle for scenario calculations
+    if calc_method == "Total Income Calculation (Annual + One-Off)":
+        income_based = annual_salary + one_off_income
+    else:
+        income_based = one_off_income
+
     # -------------------------------
     # Backend Calculations for Each Scenario
     # -------------------------------
@@ -116,35 +133,28 @@ def main():
         "Option 3": {"pension": scenario_pension_3, "isa": scenario_isa_3},
     }
 
-    results = []  # list to store results for each scenario
+    results = []  # list to store outputs for each scenario
 
     for option, data in scenarios.items():
         extra_pension = data["pension"]
         isa_contrib = data["isa"]
 
-        # Total pension contribution includes both the annual contribution and extra one-off contribution
+        # Total pension contribution includes the annual pension plus the extra one-off contribution
         total_pension_contrib = annual_pension + extra_pension
 
-        # Calculate taxable income based on chosen calculation method
-        if calc_method == "Total Income Calculation (Annual + One-Off)":
-            taxable_income = (annual_salary + one_off_income) - total_pension_contrib
-        else:
-            taxable_income = one_off_income - total_pension_contrib
-
-        # Floor taxable income at 0 (edge case)
-        taxable_income = max(taxable_income, 0)
-
-        # Compute tax and NI
+        # Taxable income for the scenario
+        taxable_income = max(income_based - total_pension_contrib, 0)
         tax_paid = compute_tax(taxable_income)
         ni_paid = compute_ni(taxable_income)
 
-        # Calculate cash available after tax and NI
-        cash_available = taxable_income - tax_paid - ni_paid
+        # Compute disposable cash available before ISA investment
+        disposable_cash_before_ISA = income_based - total_pension_contrib - (tax_paid + ni_paid)
+        # Cap ISA contribution to the disposable cash available
+        isa_contrib_used = min(isa_contrib, disposable_cash_before_ISA)
+        # Cash Available (for stacked bar & scenario results) subtracts ISA contribution as well
+        cash_available = disposable_cash_before_ISA - isa_contrib_used
 
-        # -------------------------------
-        # Retirement Pot Calculations
-        # -------------------------------
-        # Future Pension Pot Calculation:
+        # Future Pension Pot Calculation
         future_current_pot = current_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         if pension_growth_rate != 0:
             future_annual_contrib = annual_pension * (((1 + pension_growth_rate) ** years_to_retirement - 1) / pension_growth_rate)
@@ -153,22 +163,17 @@ def main():
         future_extra_pension = extra_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         future_pension_pot = future_current_pot + future_annual_contrib + future_extra_pension
 
-        # ISA Pot at Retirement (ISA contribution capped at available cash)
-        isa_contrib_used = min(isa_contrib, cash_available)
+        # Future ISA Pot Calculation (using ISA contribution capped by available cash)
         future_isa_pot = isa_contrib_used * ((1 + isa_growth_rate) ** years_to_retirement)
 
-        # -------------------------------
-        # Post-Tax Monthly Retirement Income Calculation
-        # -------------------------------
-        monthly_pension_income = (
-            (future_pension_pot * 0.25 * 0.04) +   # 25% tax-free portion at 4% annual withdrawal
-            (future_pension_pot * 0.75 * 0.04 * 0.8) # 75% taxed at an effective 80% rate of 4%
-        ) / 12
-
-        monthly_isa_income = (future_isa_pot * 0.04) / 12  # ISA income is tax-free
+        # Monthly Retirement Income Calculation (Post-Tax)
+        # Assumption: 4% annual withdrawal rate.
+        # 25% of the pension pot is tax‑free; the remaining 75% is taxed (here we assume an effective 20% tax rate on that portion).
+        monthly_pension_income = ((future_pension_pot * 0.25 * 0.04) +
+                                  (future_pension_pot * 0.75 * 0.04 * 0.8)) / 12
+        monthly_isa_income = (future_isa_pot * 0.04) / 12
         total_monthly_income = monthly_pension_income + monthly_isa_income
 
-        # Collect results for this scenario
         results.append({
             "Option": option,
             "Total Pension Contribution (£)": total_pension_contrib,
@@ -177,24 +182,50 @@ def main():
             "Cash Available (£)": cash_available,
             "Future Pension Pot (£)": future_pension_pot,
             "Future ISA Pot (£)": future_isa_pot,
-            "Monthly Retirement Income (£)": total_monthly_income
+            "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income
         })
 
-    # Create DataFrame from results
+    # Create a DataFrame from the results
     df = pd.DataFrame(results)
 
-    st.markdown("---")
-    st.header("2️⃣ Results Displayed")
+
     st.subheader("Breakdown of Each Contribution Option")
     
-    # Apply numeric formatting only to numeric columns
+    # Format only numeric columns for display
     numeric_cols = df.select_dtypes(include=['number']).columns
     df_styled = df.style.format({col: "{:,.2f}" for col in numeric_cols})
     st.dataframe(df_styled)
 
-    # Recommended Option based on highest Cash Available
-    recommended_option = df.loc[df["Cash Available (£)"].idxmax(), "Option"]
-    st.subheader(f"🏆 Recommended Option: **{recommended_option}** (Highest Cash Available)")
+    # -------------------------------
+    # Recommended Option Calculation
+    # -------------------------------
+    # We balance Cash Available and Monthly Retirement Income (Post-Tax) using equal weights.
+    cash_values = df["Cash Available (£)"]
+    income_values = df["Monthly Retirement Income (Post-Tax) (£)"]
+    cash_min, cash_max = cash_values.min(), cash_values.max()
+    income_min, income_max = income_values.min(), income_values.max()
+
+    scores = []
+    for idx, row in df.iterrows():
+        # Normalize Cash Available
+        if cash_max - cash_min > 0:
+            norm_cash = (row["Cash Available (£)"] - cash_min) / (cash_max - cash_min)
+        else:
+            norm_cash = 1
+        # Normalize Monthly Income
+        if income_max - income_min > 0:
+            norm_income = (row["Monthly Retirement Income (Post-Tax) (£)"] - income_min) / (income_max - income_min)
+        else:
+            norm_income = 1
+
+        # Equal weighting: 50% for each metric
+        score = 0.5 * norm_cash + 0.5 * norm_income
+        scores.append(score)
+
+    df["Score"] = scores
+    best_idx = df["Score"].idxmax()
+    recommended_option = df.loc[best_idx, "Option"]
+    st.subheader(f"🏆 Recommended Option: **{recommended_option}** (Best balance of Cash and Post-Tax Income)")
 
     # -------------------------------
     # Stacked Bar Chart Visualization
@@ -211,7 +242,6 @@ def main():
 
     fig, ax = plt.subplots(figsize=(8, 6))
     
-    # Create stacked bars for each component
     bar1 = ax.bar(x, pension_values, width, label="Pension Contribution")
     bar2 = ax.bar(x, tax_values, width, bottom=pension_values, label="Tax Paid")
     bottom_stack = np.array(pension_values) + np.array(tax_values)
@@ -227,9 +257,7 @@ def main():
 
     st.pyplot(fig)
 
-    st.markdown("---")
-    st.write("### Summary")
-  
+
 
 if __name__ == '__main__':
     main()

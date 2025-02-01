@@ -19,15 +19,12 @@ def compute_tax(income):
     tax = 0
     if income <= 12570:
         return 0
-    # 20% band
     if income > 12570:
         taxable = min(income, 50270) - 12570
         tax += taxable * 0.20
-    # 40% band
     if income > 50270:
         taxable = min(income, 125140) - 50270
         tax += taxable * 0.40
-    # 45% band
     if income > 125140:
         taxable = income - 125140
         tax += taxable * 0.45
@@ -43,9 +40,7 @@ def compute_ni(income):
     if income <= 12570:
         return 0
     ni = 0
-    # NI for income between 12,570 and 50,270 at 10%
     ni += (min(income, 50270) - 12570) * 0.10
-    # NI for income above 50,270 at 2%
     if income > 50270:
         ni += (income - 50270) * 0.02
     return ni
@@ -99,7 +94,7 @@ The dashboard allows you to:
         )
     )
 
-    # Determine the income base based on the toggle
+    # Determine income base based on toggle
     if calc_method == "Total Income Calculation (Annual + One-Off)":
         income_based = annual_salary + one_off_income
     else:
@@ -110,7 +105,7 @@ The dashboard allows you to:
     # -------------------------------
     st.sidebar.header("Scenario Options")
 
-    # ---- Option 1 ----
+    # Option 1
     st.sidebar.markdown("##### Option 1")
     option1_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=0, key="option1_pension")
     option1_isa = st.sidebar.number_input("ISA Contribution (£)", value=20000, key="option1_isa")
@@ -123,7 +118,7 @@ The dashboard allows you to:
     st.sidebar.markdown("**Cash Available for Option 1:**")
     st.sidebar.write(f"£{option1_cash_available:,.2f}")
 
-    # ---- Option 2 ----
+    # Option 2
     st.sidebar.markdown("##### Option 2")
     option2_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=10554, key="option2_pension")
     option2_isa = st.sidebar.number_input("ISA Contribution (£)", value=20000, key="option2_isa")
@@ -136,7 +131,7 @@ The dashboard allows you to:
     st.sidebar.markdown("**Cash Available for Option 2:**")
     st.sidebar.write(f"£{option2_cash_available:,.2f}")
 
-    # ---- Option 3 ----
+    # Option 3
     st.sidebar.markdown("##### Option 3")
     option3_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=20000, key="option3_pension")
     option3_isa = st.sidebar.number_input("ISA Contribution (£)", value=0, key="option3_isa")
@@ -158,7 +153,7 @@ The dashboard allows you to:
         "Option 3": {"pension": option3_extra_pension, "isa": option3_isa},
     }
 
-    results = []  # list to store outputs for each scenario
+    results = []  # to store outputs for each scenario
 
     for option, data in scenarios.items():
         extra_pension = data["pension"]
@@ -171,9 +166,7 @@ The dashboard allows you to:
         disposable_cash = income_based - total_pension_contrib - (tax_paid + ni_paid)
         cash_available = disposable_cash - isa_contrib
 
-        # -------------------------------
         # Future Investment Projections
-        # -------------------------------
         future_current_pot = current_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         if pension_growth_rate != 0:
             future_annual_contrib = annual_pension * (((1 + pension_growth_rate) ** years_to_retirement - 1) / pension_growth_rate)
@@ -184,19 +177,13 @@ The dashboard allows you to:
 
         future_isa_pot = isa_contrib * ((1 + isa_growth_rate) ** years_to_retirement)
 
-        # -------------------------------
         # Monthly Retirement Income Calculation (Post-Tax)
-        # Assumption: 4% annual withdrawal rate; 25% of pension pot is tax‑free; 75% is taxable at 20% (80% received)
-        # -------------------------------
         monthly_pension_income = ((future_pension_pot * 0.25 * 0.04) +
                                   (future_pension_pot * 0.75 * 0.04 * 0.8)) / 12
         monthly_isa_income = (future_isa_pot * 0.04) / 12
         total_monthly_income = monthly_pension_income + monthly_isa_income
 
-        # -------------------------------
-        # Gross Monthly Income (Before Tax Deductions)
-        # For pension, gross = future_pension_pot * 0.04/12; for ISA, it's tax-free.
-        # -------------------------------
+        # Gross Monthly Income (Before tax on pension)
         gross_monthly_income = ((future_pension_pot * 0.04) + (future_isa_pot * 0.04)) / 12
 
         results.append({
@@ -253,15 +240,18 @@ The dashboard allows you to:
     isa_pot_vals = df["Future ISA Pot (£)"].tolist()
 
     # Graph 2: Retirement Income Breakdown (Stacked)
-    # Compute tax (only on pension) and use the net (post-tax) income.
-    tax_vals = ((df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2) / 12).tolist()
-    post_tax_vals = df["Monthly Retirement Income (Post-Tax) (£)"].tolist()
-    gross_income_vals = df["Gross Monthly Income (£)"].tolist()
+    # For pension, split into:
+    # - Pension Tax = Future Pension Pot * 0.75 * 0.04 * 0.2 / 12
+    # - Net Pension Income = (Monthly Retirement Income (Post-Tax) - ISA Income)
+    # - ISA Income = Future ISA Pot * 0.04 / 12
+    pension_tax_vals = (df["Future Pension Pot (£)"] * 0.75 * 0.04 * 0.2 / 12).tolist()
+    isa_income_vals = (df["Future ISA Pot (£)"] * 0.04 / 12).tolist()
+    net_pension_income_vals = (df["Monthly Retirement Income (Post-Tax) (£)"] - df["Future ISA Pot (£)"] * 0.04 / 12).tolist()
 
     # -------------------------------
     # Create Graphs with Plotly and Show Side by Side
     # -------------------------------
-    graph_height = 500  # Force both graphs to have the same height
+    graph_height = 500  # Same height for both graphs
 
     col1, col2 = st.columns(2)
 
@@ -323,31 +313,27 @@ The dashboard allows you to:
 
     with col2:
         # Graph 2: Stacked Bar Chart for Retirement Income Breakdown
-        # Two stacked traces: Tax and Post Tax Income, plus a scatter trace for Gross Income.
+        # Stacks: Pension Tax, Net Pension Income, and ISA Income.
         fig2 = go.Figure()
         fig2.add_trace(go.Bar(
             x=options_list,
-            y=tax_vals,
-            name="Tax",
+            y=pension_tax_vals,
+            name="Pension Tax",
             marker_color="#DC143C",  # crimson
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.add_trace(go.Bar(
             x=options_list,
-            y=post_tax_vals,
-            name="Post Tax Income",
+            y=net_pension_income_vals,
+            name="Net Pension Income",
             marker_color="#228B22",  # forest green
             hovertemplate="£%{y:,.2f}"
         ))
-        # Add a scatter trace for Gross Income markers
-        fig2.add_trace(go.Scatter(
+        fig2.add_trace(go.Bar(
             x=options_list,
-            y=gross_income_vals,
-            mode='markers+text',
-            name="Gross Income",
-            marker=dict(color="#000000", size=10),
-            text=[f"£{val:,.2f}" for val in gross_income_vals],
-            textposition="top center",
+            y=isa_income_vals,
+            name="ISA Income",
+            marker_color="#FF8C00",  # dark orange
             hovertemplate="£%{y:,.2f}"
         ))
         fig2.update_layout(
@@ -366,9 +352,9 @@ The dashboard allows you to:
     st.write(
         """
 ✅ Both graphs now have the same height with legends arranged at the same horizontal line.  
-✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax+NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.  
-✅ Graph 2 (stacked): Displays retirement income breakdown – the stacked bar shows Tax and Post Tax Income (whose sum equals the Gross Income), with Gross Income indicated by markers.  
-✅ Colors have been updated for a more appealing UI.
+✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.  
+✅ Graph 2 (stacked): Breaks down retirement income into Pension Tax, Net Pension Income, and ISA Income.  
+✅ This detailed breakdown makes Graph 2 more comparable to Graph 1.
 ✅ Automatic recommendation is provided based on balanced cash liquidity and post-tax retirement income.
         """
     )

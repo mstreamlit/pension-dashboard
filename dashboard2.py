@@ -64,22 +64,7 @@ def compute_ni(full_income):
 # -------------------------------
 def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
-    st.write("📅 **Date:** January 2025")
-    st.write("👤 **Owner:** [Your Name]")
-    st.write("💼 **Purpose:** Helps users determine the optimal pension and ISA contributions by evaluating tax implications, NI, cash availability, and long‐term retirement income.")
-    
-    st.markdown("---")
-    st.header("1️⃣ Overview")
-    st.write(
-        """
-The dashboard allows you to:
-- Compare three different pension contribution scenarios.
-- Assess cash available for ISA investments.
-- See the impact of contributions on tax, NI, and net take-home.
-- View projected retirement pots for pension & ISA investments.
-- Get a dynamic recommendation for the best contribution strategy.
-        """
-    )
+
     
     # -------------------------------
     # Sidebar – General Inputs
@@ -276,8 +261,7 @@ The dashboard allows you to:
         results.append({
             "Option": option,
             "Total Pension Contribution (£)": total_pension_contrib,
-            "Tax Paid (£)": tax_paid_value,
-            "NI Paid (£)": ni_paid_value,
+            "Total Tax + NI Paid (£)": tax_paid_value,
             "ISA Contribution (£)": isa_contrib,
             "Cash Available (£)": cash_available_value,
             "Future Pension Pot (£)": future_pension_pot,
@@ -335,7 +319,7 @@ The dashboard allows you to:
     
     # Graph 1: Current Financial Breakdown (6 components)
     pension_vals = df["Total Pension Contribution (£)"].tolist()
-    tax_ni_vals = (df["Tax Paid (£)"] + df["NI Paid (£)"]).tolist()
+    tax_ni_vals = (df["Total Tax + NI Paid (£)"]).tolist()
     isa_contrib_vals = df["ISA Contribution (£)"].tolist()
     cash_avail_vals = df["Cash Available (£)"].tolist()
     pension_pot_vals = df["Future Pension Pot (£)"].tolist()

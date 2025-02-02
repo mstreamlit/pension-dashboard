@@ -276,8 +276,7 @@ The dashboard allows you to:
         results.append({
             "Option": option,
             "Total Pension Contribution (£)": total_pension_contrib,
-            "Tax Paid (£)": tax_paid_value,
-            "NI Paid (£)": ni_paid_value,
+            "Tax + NI Paid (£)": tax_paid_value + ni_paid_value,
             "ISA Contribution (£)": isa_contrib,
             "Cash Available (£)": cash_available_value,
             "Future Pension Pot (£)": future_pension_pot,

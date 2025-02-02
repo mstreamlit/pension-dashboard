@@ -4,68 +4,59 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # -------------------------------
-# Updated Tax Calculation Function
+# Updated Tax Calculation Function for Full Income
 # -------------------------------
-def compute_tax(income_after_pension):
+def compute_tax(full_income):
     """
-    Compute UK Income Tax for the income after pension contributions using the 2024/2025 bands.
+    Compute UK Income Tax for full_income (after pension contributions) using the 2024/2025 bands.
     
     Rules:
     - Personal Allowance (PA):
-        • If income_after_pension ≤ £100,000, PA = £12,570.
-        • If income_after_pension ≥ £125,140, PA = 0.
-        • Otherwise, PA = 12,570 - ((income_after_pension - 100,000) / 2).
-    - Then, tax is applied on (income_after_pension - PA) as follows:
+        • If full_income ≤ £100,000, PA = £12,570.
+        • If full_income ≥ £125,140, PA = 0.
+        • Otherwise, PA = 12,570 - ((full_income - 100,000) / 2).
+    - Then tax is applied on (full_income - PA) as follows:
         • 20% on income from effective PA up to £50,270.
         • 40% on income from £50,271 to £125,140.
-        • 45% on any income above £125,140.
+        • 45% on income above £125,140.
     """
-    # Determine effective Personal Allowance (PA) based on income_after_pension.
-    if income_after_pension <= 100000:
+    if full_income <= 100000:
         PA = 12570
-    elif income_after_pension >= 125140:
+    elif full_income >= 125140:
         PA = 0
     else:
-        PA = 12570 - ((income_after_pension - 100000) / 2)
+        PA = 12570 - ((full_income - 100000) / 2)
     
-    # Ensure that if income_after_pension is below PA, no tax is charged.
-    if income_after_pension <= PA:
+    if full_income <= PA:
         return 0
     
-    # Calculate taxable income (income subject to tax)
-    taxable_income = income_after_pension - PA
+    taxable_income = full_income - PA
+    basic_band_limit = 50270
+    higher_band_limit = 125140
 
-    # Define the tax band boundaries for full PA conditions:
-    # When full PA is available, the basic rate band spans £12,571 to £50,270,
-    # i.e. a width of 50,270 - 12,570 = £37,700.
-    # With a reduced PA, the basic rate band effectively expands by the reduction.
-    basic_band_width = 50270 - PA  # The portion taxed at 20%
-    higher_band_width = 125140 - 50270  # The portion taxed at 40%
-
-    if income_after_pension <= 50270:
+    if full_income <= basic_band_limit:
         tax = taxable_income * 0.20
-    elif income_after_pension <= 125140:
-        tax = basic_band_width * 0.20 + (income_after_pension - 50270) * 0.40
+    elif full_income <= higher_band_limit:
+        tax = (basic_band_limit - PA) * 0.20 + (full_income - basic_band_limit) * 0.40
     else:
-        tax = basic_band_width * 0.20 + higher_band_width * 0.40 + (income_after_pension - 125140) * 0.45
+        tax = (basic_band_limit - PA) * 0.20 + (higher_band_limit - basic_band_limit) * 0.40 + (full_income - higher_band_limit) * 0.45
     return tax
 
 # -------------------------------
-# NI Calculation (Unchanged)
+# Updated NI Calculation Function for Full Income
 # -------------------------------
-def compute_ni(income_after_pension):
+def compute_ni(full_income):
     """
-    Compute UK National Insurance (NI) on the given income_after_pension using the corrected brackets:
-      - Below £12,570: 0%
-      - £12,570 to £50,270: 10%
-      - Above £50,270: 2%
+    Compute UK National Insurance (NI) on full_income using the rates for 2024/2025:
+      - 0% on earnings up to £12,570
+      - 8% on earnings between £12,570 and £50,270
+      - 2% on earnings above £50,270
     """
-    if income_after_pension <= 12570:
+    if full_income <= 12570:
         return 0
-    ni = 0
-    ni += (min(income_after_pension, 50270) - 12570) * 0.10
-    if income_after_pension > 50270:
-        ni += (income_after_pension - 50270) * 0.02
+    ni = (min(full_income, 50270) - 12570) * 0.08
+    if full_income > 50270:
+        ni += (full_income - 50270) * 0.02
     return ni
 
 # -------------------------------
@@ -73,8 +64,23 @@ def compute_ni(income_after_pension):
 # -------------------------------
 def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
+    st.write("📅 **Date:** January 2025")
+    st.write("👤 **Owner:** [Your Name]")
+    st.write("💼 **Purpose:** Helps users determine the optimal pension and ISA contributions by evaluating tax implications, NI, cash availability, and long‐term retirement income.")
     
-
+    st.markdown("---")
+    st.header("1️⃣ Overview")
+    st.write(
+        """
+The dashboard allows you to:
+- Compare three different pension contribution scenarios.
+- Assess cash available for ISA investments.
+- See the impact of contributions on tax, NI, and net take-home.
+- View projected retirement pots for pension & ISA investments.
+- Get a dynamic recommendation for the best contribution strategy.
+        """
+    )
+    
     # -------------------------------
     # Sidebar – General Inputs
     # -------------------------------
@@ -102,31 +108,67 @@ def main():
         )
     )
     
-    # Determine the income base based on the toggle.
-    # (For tax purposes, assume pension contributions reduce your income.)
+    # Determine the income base:
+    # For "Total Income Calculation", we use the full income after subtracting pension contributions.
+    # For "One-Off Payment Calculation", the bonus tax/NI will be computed on the one-off income using full income thresholds.
     if calc_method == "Total Income Calculation (Annual + One-Off)":
-        income_based = annual_salary + one_off_income
+        income_base = annual_salary + one_off_income
     else:
-        income_based = one_off_income
+        income_base = annual_salary + one_off_income  # We still need full income to determine the thresholds.
     
     # -------------------------------
     # Sidebar – Scenario Options & Cash Available Calculations
     # -------------------------------
-
-    st.write("taxable income: ")
-    st.sidebar.write(f"£{income_based:,.2f}")
     st.sidebar.header("Scenario Options")
+    
+    # For each option, the annual pension contribution and additional pension contribution remain
+    # the same for future projections. However, for the bonus (one-off) tax/NI calculation:
+    # - If using "One-Off Payment Calculation", we calculate tax and NI on one_off_income
+    #   using the tax bands determined by income_base.
+    
+    if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
+        # Determine bonus tax rate based on income_base.
+        if income_base >= 125140:
+            bonus_tax_rate = 0.45
+        elif income_base >= 50271:
+            bonus_tax_rate = 0.40
+        elif income_base >= 12571:
+            bonus_tax_rate = 0.20
+        else:
+            bonus_tax_rate = 0
+        bonus_tax = one_off_income * bonus_tax_rate
+        
+        # Determine bonus NI rate based on income_base using the NI bands for full income.
+        if income_base >= 50270:
+            bonus_ni_rate = 0.02
+        elif income_base >= 12571:
+            bonus_ni_rate = 0.08
+        else:
+            bonus_ni_rate = 0
+        bonus_ni = one_off_income * bonus_ni_rate
+        
+        bonus_cash_available = one_off_income - (bonus_tax + bonus_ni)
+    
+    # For each option, ISA contributions may vary.
+    # The cash available displayed in the sidebar for the bonus will be:
+    #   bonus_cash_available (if one-off mode) minus the ISA contribution.
     
     # Option 1
     st.sidebar.markdown("##### Option 1")
     option1_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=0, key="option1_pension")
     option1_isa = st.sidebar.number_input("ISA Contribution (£)", value=20000, key="option1_isa")
     option1_total_pension = annual_pension + option1_extra_pension
-    income_after_pension_1 = max(income_based - option1_total_pension, 0)
-    tax_option1 = compute_tax(income_after_pension_1)
-    ni_option1 = compute_ni(income_after_pension_1)
-    disposable_option1 = income_after_pension_1 - (tax_option1 + ni_option1)
-    option1_cash_available = disposable_option1 - option1_isa
+    
+    if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
+        option1_cash_available = bonus_cash_available - option1_isa
+    else:
+        # For total income calculation, subtract the pension contributions from income_base.
+        income_after_pension_1 = max(income_base - option1_total_pension, 0)
+        tax_option1 = compute_tax(income_after_pension_1)
+        ni_option1 = compute_ni(income_after_pension_1)
+        disposable_option1 = income_after_pension_1 - (tax_option1 + ni_option1)
+        option1_cash_available = disposable_option1 - option1_isa
+    
     st.sidebar.markdown("**Cash Available for Option 1:**")
     st.sidebar.write(f"£{option1_cash_available:,.2f}")
     
@@ -135,11 +177,16 @@ def main():
     option2_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=10554, key="option2_pension")
     option2_isa = st.sidebar.number_input("ISA Contribution (£)", value=20000, key="option2_isa")
     option2_total_pension = annual_pension + option2_extra_pension
-    income_after_pension_2 = max(income_based - option2_total_pension, 0)
-    tax_option2 = compute_tax(income_after_pension_2)
-    ni_option2 = compute_ni(income_after_pension_2)
-    disposable_option2 = income_after_pension_2 - (tax_option2 + ni_option2)
-    option2_cash_available = disposable_option2 - option2_isa
+    
+    if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
+        option2_cash_available = bonus_cash_available - option2_isa
+    else:
+        income_after_pension_2 = max(income_base - option2_total_pension, 0)
+        tax_option2 = compute_tax(income_after_pension_2)
+        ni_option2 = compute_ni(income_after_pension_2)
+        disposable_option2 = income_after_pension_2 - (tax_option2 + ni_option2)
+        option2_cash_available = disposable_option2 - option2_isa
+    
     st.sidebar.markdown("**Cash Available for Option 2:**")
     st.sidebar.write(f"£{option2_cash_available:,.2f}")
     
@@ -148,17 +195,23 @@ def main():
     option3_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=20000, key="option3_pension")
     option3_isa = st.sidebar.number_input("ISA Contribution (£)", value=0, key="option3_isa")
     option3_total_pension = annual_pension + option3_extra_pension
-    income_after_pension_3 = max(income_based - option3_total_pension, 0)
-    tax_option3 = compute_tax(income_after_pension_3)
-    ni_option3 = compute_ni(income_after_pension_3)
-    disposable_option3 = income_after_pension_3 - (tax_option3 + ni_option3)
-    option3_cash_available = disposable_option3 - option3_isa
+    
+    if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
+        option3_cash_available = bonus_cash_available - option3_isa
+    else:
+        income_after_pension_3 = max(income_base - option3_total_pension, 0)
+        tax_option3 = compute_tax(income_after_pension_3)
+        ni_option3 = compute_ni(income_after_pension_3)
+        disposable_option3 = income_after_pension_3 - (tax_option3 + ni_option3)
+        option3_cash_available = disposable_option3 - option3_isa
+    
     st.sidebar.markdown("**Cash Available for Option 3:**")
     st.sidebar.write(f"£{option3_cash_available:,.2f}")
     
     # -------------------------------
-    # Main Calculations for Each Scenario
+    # Main Calculations for Each Scenario (For Future Projections and Retirement)
     # -------------------------------
+    # Note: Future projections still use the pension contributions as entered.
     scenarios = {
         "Option 1": {"pension": option1_extra_pension, "isa": option1_isa},
         "Option 2": {"pension": option2_extra_pension, "isa": option2_isa},
@@ -172,13 +225,17 @@ def main():
         isa_contrib = data["isa"]
     
         total_pension_contrib = annual_pension + extra_pension
-        income_after_pension = max(income_based - total_pension_contrib, 0)
-        tax_paid = compute_tax(income_after_pension)
-        ni_paid = compute_ni(income_after_pension)
-        disposable_cash = income_after_pension - (tax_paid + ni_paid)
-        cash_available = disposable_cash - isa_contrib
+        
+        # For future projections, the annual pension contributions are always subtracted.
+        if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
+            # For the bonus portion, tax and NI are computed separately as above,
+            # so for projections, we treat the annual part as unchanged.
+            # (The one-off tax/NI does not affect future pension pot.)
+            pass  # no change needed for future projections
+        else:
+            pass  # unchanged
     
-        # Future Investment Projections
+        # Future Investment Projections (common to both methods)
         future_current_pot = current_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         if pension_growth_rate != 0:
             future_annual_contrib = annual_pension * (((1 + pension_growth_rate) ** years_to_retirement - 1) / pension_growth_rate)
@@ -186,7 +243,6 @@ def main():
             future_annual_contrib = annual_pension * years_to_retirement
         future_extra_pension = extra_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         future_pension_pot = future_current_pot + future_annual_contrib + future_extra_pension
-    
         future_isa_pot = isa_contrib * ((1 + isa_growth_rate) ** years_to_retirement)
     
         # Monthly Retirement Income Calculation (Post-Tax)
@@ -194,17 +250,16 @@ def main():
                                   (future_pension_pot * 0.75 * 0.04 * 0.8)) / 12
         monthly_isa_income = (future_isa_pot * 0.04) / 12
         total_monthly_income = monthly_pension_income + monthly_isa_income
-    
         # Gross Monthly Income (Before tax on pension)
         gross_monthly_income = ((future_pension_pot * 0.04) + (future_isa_pot * 0.04)) / 12
     
         results.append({
             "Option": option,
             "Total Pension Contribution (£)": total_pension_contrib,
-            "Tax Paid (£)": tax_paid,
-            "NI Paid (£)": ni_paid,
+            "Tax Paid (£)": bonus_tax if calc_method=="One-Off Payment Calculation (One-Off - Pension)" else compute_tax(max(income_base - total_pension_contrib, 0)),
+            "NI Paid (£)": bonus_ni if calc_method=="One-Off Payment Calculation (One-Off - Pension)" else compute_ni(max(income_base - total_pension_contrib, 0)),
             "ISA Contribution (£)": isa_contrib,
-            "Cash Available (£)": cash_available,
+            "Cash Available (£)": (bonus_cash_available - isa_contrib) if calc_method=="One-Off Payment Calculation (One-Off - Pension)" else (max(income_base - total_pension_contrib, 0) - (compute_tax(max(income_base - total_pension_contrib, 0)) + compute_ni(max(income_base - total_pension_contrib, 0))) - isa_contrib),
             "Future Pension Pot (£)": future_pension_pot,
             "Future ISA Pot (£)": future_isa_pot,
             "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income,
@@ -371,7 +426,18 @@ def main():
         )
         st.plotly_chart(fig2, use_container_width=True)
     
-
+    st.markdown("---")
+    st.write("### Summary")
+    st.write(
+        """
+✅ Both graphs now have the same height, width, and margins so that legends and x-axis labels do not overlap.
+✅ X-axis labels are split into two rows (Option on the first row and additional pension contribution on the second).
+✅ Graph 1 (stacked): Displays current contributions & liquidity including Pension Contribution, Tax + NI, ISA Contribution, Cash Available, Pension Pot, and ISA Pot.
+✅ Graph 2 (stacked): Breaks down retirement income into Pension Tax, Net Pension Income, and ISA Income.
+✅ Automatic recommendation is provided based on balanced cash liquidity and post-tax retirement income.
+        """
+    )
+    st.write("🚀 Next Steps: Test various input levels, gather user feedback, and iterate further.")
     
 if __name__ == '__main__':
     main()

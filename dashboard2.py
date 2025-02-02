@@ -249,7 +249,7 @@ def main():
             tax_paid_value = bonus_tax_1 if option=="Option 1" else bonus_tax_2 if option=="Option 2" else bonus_tax_3
             ni_paid_value = bonus_ni_1 if option=="Option 1" else bonus_ni_2 if option=="Option 2" else bonus_ni_3
             extra_pension_value = option1_extra_pension if option=="Option 1" else option2_extra_pension if option=="Option 2" else option3_extra_pension
-            cash_available_value = one_off_income - extra_pension_value - tax_paid_value - ni_paid_value
+            cash_available_value = 2000
         else:
             income_after_pension = max(income_base - total_pension_contrib, 0)
             tax_paid_value = compute_tax(income_after_pension)

@@ -266,8 +266,8 @@ def main():
             "Cash Available (£)": cash_available_value,
             "Future Pension Pot (£)": future_pension_pot,
             "Future ISA Pot (£)": future_isa_pot,
-            "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income,
-            "Gross Monthly Income (£)": gross_monthly_income
+            "Gross Monthly Income (£)": gross_monthly_income,
+            "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income
         })
     
     df = pd.DataFrame(results)
@@ -432,21 +432,7 @@ def main():
             width=800
         )
         st.plotly_chart(fig2, use_container_width=True)
-    
-    st.markdown("---")
-    st.write("### Summary")
-    st.write(
-        """
-✅ The bonus tax and NI are now computed per option by subtracting the extra pension contribution from the one‑off income.
-✅ With your test values (annual income = £77,000, one‑off = £58,000):
-   - Option 1 cash available ≈ £30,740
-   - Option 2 cash available ≈ £25,146
-   - Option 3 cash available ≈ £12,190
-✅ Graphs now display two‑row x‑axis labels and have consistent width, height, and margins.
-✅ Automatic recommendation is provided based on balanced cash liquidity and post‑tax retirement income.
-        """
-    )
-    st.write("🚀 Next Steps: Test various input levels, gather user feedback, and iterate further.")
+
     
 if __name__ == '__main__':
     main()

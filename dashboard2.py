@@ -266,6 +266,7 @@ def main():
             "Cash Available (£)": cash_available_value,
             "Future Pension Pot (£)": future_pension_pot,
             "Future ISA Pot (£)": future_isa_pot,
+            "Total Retirement Pot (£)": future_isa_pot + future_pension_pot,
             "Gross Monthly Income (£)": gross_monthly_income,
             "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income
         })

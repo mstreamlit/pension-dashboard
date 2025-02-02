@@ -108,24 +108,23 @@ The dashboard allows you to:
         )
     )
     
-    # Use full income (annual + one_off) to determine tax thresholds.
-    income_base = annual_salary + one_off_income  # e.g., 77000 + 58000 = 135000
+    # For threshold purposes, use full income (annual_salary + one_off_income)
+    income_base = annual_salary + one_off_income  # e.g., 77,000 + 58,000 = 135,000
     
     # -------------------------------
     # Sidebar – Scenario Options & Bonus Cash Available Calculations
     # -------------------------------
     st.sidebar.header("Scenario Options")
     
-    # For One-Off Payment Calculation, we now deduct only the extra pension (not a monthly fraction).
+    # In One-Off Payment Calculation mode, we now subtract the extra pension from the bonus.
     
     # Option 1
     st.sidebar.markdown("##### Option 1")
     option1_extra_pension = st.sidebar.number_input("Additional Pension Contribution (£)", value=0, key="option1_pension")
     option1_isa = st.sidebar.number_input("ISA Contribution (£)", value=0, key="option1_isa")
-    # For one-off mode, taxable bonus = one_off_income - extra_pension
+    # For one-off mode, taxable bonus = one_off_income - extra_pension (per option)
     if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
         taxable_bonus_1 = one_off_income - option1_extra_pension
-        # Determine bonus tax rate based on income_base:
         if income_base >= 125140:
             bonus_tax_rate = 0.45
         elif income_base >= 50271:
@@ -135,7 +134,6 @@ The dashboard allows you to:
         else:
             bonus_tax_rate = 0
         bonus_tax_1 = taxable_bonus_1 * bonus_tax_rate
-        # Bonus NI using NI bands:
         if income_base >= 50270:
             bonus_ni_rate = 0.02
         elif income_base >= 12571:
@@ -143,9 +141,8 @@ The dashboard allows you to:
         else:
             bonus_ni_rate = 0
         bonus_ni_1 = taxable_bonus_1 * bonus_ni_rate
-        option1_cash_available = one_off_income - (bonus_tax_1 + bonus_ni_1) - option1_isa
+        option1_cash_available = one_off_income - option1_extra_pension - (bonus_tax_1 + bonus_ni_1) - option1_isa
     else:
-        # Total Income Calculation: subtract full pension (annual + extra) from income_base.
         option1_total_pension = annual_pension + option1_extra_pension
         income_after_pension_1 = max(income_base - option1_total_pension, 0)
         tax_option1 = compute_tax(income_after_pension_1)
@@ -177,7 +174,7 @@ The dashboard allows you to:
         else:
             bonus_ni_rate = 0
         bonus_ni_2 = taxable_bonus_2 * bonus_ni_rate
-        option2_cash_available = one_off_income - (bonus_tax_2 + bonus_ni_2) - option2_isa
+        option2_cash_available = one_off_income - option2_extra_pension - (bonus_tax_2 + bonus_ni_2) - option2_isa
     else:
         option2_total_pension = annual_pension + option2_extra_pension
         income_after_pension_2 = max(income_base - option2_total_pension, 0)
@@ -210,7 +207,7 @@ The dashboard allows you to:
         else:
             bonus_ni_rate = 0
         bonus_ni_3 = taxable_bonus_3 * bonus_ni_rate
-        option3_cash_available = one_off_income - (bonus_tax_3 + bonus_ni_3) - option3_isa
+        option3_cash_available = one_off_income - option3_extra_pension - (bonus_tax_3 + bonus_ni_3) - option3_isa
     else:
         option3_total_pension = annual_pension + option3_extra_pension
         income_after_pension_3 = max(income_base - option3_total_pension, 0)
@@ -222,8 +219,9 @@ The dashboard allows you to:
     st.sidebar.write(f"£{option3_cash_available:,.2f}")
     
     # -------------------------------
-    # Future Projections (Same for both methods)
+    # Future Projections (Ongoing Pension, not the one-off bonus)
     # -------------------------------
+    # For future projections we use the full annual pension contributions (base + extra) as entered.
     scenarios = {
         "Option 1": {"pension": option1_extra_pension, "isa": option1_isa},
         "Option 2": {"pension": option2_extra_pension, "isa": option2_isa},
@@ -235,11 +233,19 @@ The dashboard allows you to:
         extra_pension = data["pension"]
         isa_contrib = data["isa"]
         total_pension_contrib = annual_pension + extra_pension
+        
         if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
-            # For future projections, use full annual pension contributions (base + extra)
-            pass
+            # For future projections, the one-off bonus does not affect ongoing pension contributions.
+            tax_paid_value = None  # not used
+            ni_paid_value = None   # not used
+            cash_available_value = None  # not used for projections
         else:
-            pass
+            income_after_pension = max(income_base - total_pension_contrib, 0)
+            tax_paid_value = compute_tax(income_after_pension)
+            ni_paid_value = compute_ni(income_after_pension)
+            disposable_cash = income_after_pension - (tax_paid_value + ni_paid_value)
+            cash_available_value = disposable_cash - isa_contrib
+        
         future_current_pot = current_pension * ((1 + pension_growth_rate) ** years_to_retirement)
         if pension_growth_rate != 0:
             future_annual_contrib = annual_pension * (((1 + pension_growth_rate) ** years_to_retirement - 1) / pension_growth_rate)
@@ -255,26 +261,25 @@ The dashboard allows you to:
         total_monthly_income = monthly_pension_income + monthly_isa_income
         gross_monthly_income = ((future_pension_pot * 0.04) + (future_isa_pot * 0.04)) / 12
     
-        if calc_method == "One-Off Payment Calculation (One-Off - Pension)":
-            tax_paid_value = bonus_tax_1 if option=="Option 1" else bonus_tax_2 if option=="Option 2" else bonus_tax_3
-            ni_paid_value = bonus_ni_1 if option=="Option 1" else bonus_ni_2 if option=="Option 2" else bonus_ni_3
-            cash_available_value = one_off_income - (bonus_tax_1 + bonus_ni_1) - option1_isa if option=="Option 1" else \
-                                   one_off_income - (bonus_tax_2 + bonus_ni_2) - option2_isa if option=="Option 2" else \
-                                   one_off_income - (bonus_tax_3 + bonus_ni_3) - option3_isa
-        else:
-            income_after_pension = max(income_base - total_pension_contrib, 0)
-            tax_paid_value = compute_tax(income_after_pension)
-            ni_paid_value = compute_ni(income_after_pension)
-            disposable_cash = income_after_pension - (tax_paid_value + ni_paid_value)
-            cash_available_value = disposable_cash - isa_contrib
-    
         results.append({
             "Option": option,
             "Total Pension Contribution (£)": total_pension_contrib,
-            "Tax Paid (£)": tax_paid_value,
-            "NI Paid (£)": ni_paid_value,
+            "Tax Paid (£)": bonus_tax_1 if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 1" else
+                              bonus_tax_2 if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 2" else
+                              bonus_tax_3 if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 3" else
+                              compute_tax(max(income_base - total_pension_contrib, 0)),
+            "NI Paid (£)": bonus_ni_1 if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 1" else
+                           bonus_ni_2 if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 2" else
+                           bonus_ni_3 if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 3" else
+                           compute_ni(max(income_base - total_pension_contrib, 0)),
             "ISA Contribution (£)": isa_contrib,
-            "Cash Available (£)": cash_available_value,
+            "Cash Available (£)": one_off_income - (option1_extra_pension if option=="Option 1" else option2_extra_pension if option=="Option 2" else option3_extra_pension)
+                                    - (bonus_tax_1 + bonus_ni_1) if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 1" else
+                                    one_off_income - (option1_extra_pension if option=="Option 1" else option2_extra_pension if option=="Option 2" else option3_extra_pension)
+                                    - (bonus_tax_2 + bonus_ni_2) if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 2" else
+                                    one_off_income - (option1_extra_pension if option=="Option 1" else option2_extra_pension if option=="Option 2" else option3_extra_pension)
+                                    - (bonus_tax_3 + bonus_ni_3) if calc_method=="One-Off Payment Calculation (One-Off - Pension)" and option=="Option 3" else
+                                    cash_available_value,
             "Future Pension Pot (£)": future_pension_pot,
             "Future ISA Pot (£)": future_isa_pot,
             "Monthly Retirement Income (Post-Tax) (£)": total_monthly_income,
@@ -452,9 +457,9 @@ The dashboard allows you to:
 ✅ The bonus tax and NI are now computed per option by deducting the extra pension contribution from the one‑off payment.
 ✅ For the test values provided, the calculated cash available (ignoring decimals) are:
    - Option 1: £30,740
-   - Option 2: £35,700
-   - Option 3: £47,190
-✅ Graphs now use two‐row x‑axis labels and have the same width, height, and margins so legends do not overlap.
+   - Option 2: £25,146
+   - Option 3: £12,190
+✅ Graphs now use two‐row x‑axis labels and have consistent width, height, and margins.
 ✅ Automatic recommendation is provided based on balanced cash liquidity and post‑tax retirement income.
         """
     )

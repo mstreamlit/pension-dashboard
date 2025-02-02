@@ -73,7 +73,7 @@ def compute_ni(income_after_pension):
 # -------------------------------
 def main():
     st.title("Pension & ISA Contribution Optimization Dashboard")
-    st.write("taxable income: ")
+    
 
     # -------------------------------
     # Sidebar – General Inputs
@@ -112,6 +112,9 @@ def main():
     # -------------------------------
     # Sidebar – Scenario Options & Cash Available Calculations
     # -------------------------------
+
+    st.write("taxable income: ")
+    st.sidebar.write(f"£{income_based:,.2f}")
     st.sidebar.header("Scenario Options")
     
     # Option 1
